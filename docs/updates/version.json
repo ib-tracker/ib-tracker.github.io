@@ -1,0 +1,17 @@
+{
+  "version": "1.2.0",
+  "released": "2026-08-07",
+  "notes": [
+    "The app now checks for updates once a day and can install them itself — you always see what changed and press Update before anything happens.",
+    "Busy blocks can repeat on any set of days (every day, weekdays, or just Mon/Wed/Fri) and stop on an optional end date.",
+    "Busy blocks can carry travel time either side, so school 8–3 with an hour's commute really blocks 7–4 and the auto-scheduler plans around the whole trip.",
+    "Click a busy block in the week view to edit it.",
+    "University: keep your own links on each course, and add, rename or remove your quick-launch portals.",
+    "Subjects: the target arrow is hidden once you're at or above your target — the grade badge turns green instead."
+  ],
+  "payload": {
+    "url": "https://captaimrishi-ctrl.github.io/ib-tracker-updates/updates/ib-tracker-1.2.0.zip",
+    "sha256": "2ea741061bb469d24c0a2799401ff33014bb8000420e1325422489d29703fc82",
+    "size": 200079
+  }
+}

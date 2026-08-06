@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IB Study Tracker — Download</title>
+<meta name="description" content="A complete, self-contained IB study tracker. No account, no internet, no setup.">
+<style>
+  :root {
+    --page: #f6f6f2; --surface: #fcfcfb; --surface-2: #f1f0ec;
+    --ink: #191918; --ink-2: #52514e; --ink-3: #898781;
+    --hairline: #e4e3dc;
+    --accent: #4f46e5; --accent-strong: #4338ca; --accent-ink: #fff;
+    --accent-soft: #eceafc; --accent-soft-ink: #4338ca;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #131312; --surface: #1a1a19; --surface-2: #232322;
+      --ink: #f2f1ed; --ink-2: #b9b7b0; --ink-3: #898781;
+      --hairline: #33322f;
+      --accent: #6c63f0; --accent-strong: #7d75f3;
+      --accent-soft: #2b2950; --accent-soft-ink: #b6b1f7;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 4rem 1.5rem 5rem;
+    background: var(--page); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: clamp(2rem, 5vw, 2.75rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 .75rem; }
+  .lede { font-size: 1.15rem; color: var(--ink-2); margin: 0 0 2.5rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 14px; padding: 1.75rem; margin-bottom: 1.25rem;
+  }
+  .cta {
+    display: inline-block; background: var(--accent); color: var(--accent-ink);
+    padding: .8rem 1.5rem; border-radius: 10px; font-weight: 600;
+    text-decoration: none; transition: background .15s;
+  }
+  .cta:hover { background: var(--accent-strong); }
+  .note {
+    background: var(--accent-soft); color: var(--accent-soft-ink);
+    border-radius: 10px; padding: 1rem 1.25rem; font-size: .95rem; margin-top: 1.5rem;
+  }
+  h2 { font-size: 1.05rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 1rem; }
+  ul { margin: 0; padding-left: 1.25rem; color: var(--ink-2); }
+  li { margin-bottom: .5rem; }
+  code { background: var(--surface-2); padding: .15em .45em; border-radius: 5px; font-size: .9em; }
+  footer { margin-top: 3rem; color: var(--ink-3); font-size: .9rem; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>IB Study Tracker</h1>
+  <p class="lede">
+    Tasks, scheduling, grades, analytics and a study coach — all in one app that
+    runs entirely on your own computer. No account, no internet, no setup.
+  </p>
+
+  <div class="card">
+    <h2>Download for macOS</h2>
+    <p style="margin-top:0;color:var(--ink-2)">
+      Open the <code>.dmg</code>, drag <strong>IB Tracker</strong> to Applications, and you're done.
+    </p>
+    <a class="cta" href="https://github.com/captaimrishi-ctrl/ib-tracker-updates/releases/latest">Download the latest release</a>
+    <div class="note">
+      <strong>First launch:</strong> macOS may say the app is from an unidentified
+      developer. Right-click the app → <strong>Open</strong> → <strong>Open</strong>.
+      This only happens once.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Your data</h2>
+    <ul>
+      <li>Everything is saved on this computer and never leaves it.</li>
+      <li>The app updates itself — it checks once a day and asks before installing.</li>
+      <li>An update only replaces the app's own files. Your tasks, sessions, grades and settings are untouched.</li>
+      <li>Take a backup any time from Settings → <strong>Export backup</strong>.</li>
+    </ul>
+  </div>
+
+  <footer>
+    Editing needs a licence key, sold as prepaid blocks — nothing auto-renews.
+    Without one the app is read-only: everything can still be read, searched,
+    reported on and exported, so your work is always yours to take with you.
+  </footer>
+
+</div>
+</body>
+</html>
