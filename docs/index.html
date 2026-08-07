@@ -156,8 +156,8 @@
     Free to download · Works on any Mac · No account, no sign-up, no internet needed
   </p>
   <p class="cta-note">
-    First launch: right-click the app and choose <strong>Open</strong>. macOS asks
-    once, because it's an independent app rather than one from the App Store.
+    First launch needs one extra step — <a href="#firstrun">how to open it</a>.
+    macOS blocks apps that aren't from the App Store until you allow them, once.
   </p>
 
   <figure class="shot-wrap">
@@ -370,7 +370,18 @@
       <p>Completely. There is no server. The only network request the app ever makes is a once-a-day version check, and that can be turned off in Settings.</p></details>
 
     <details><summary>Will it run on my Mac?</summary>
-      <p>Yes — it's built to run on both Apple Silicon and older Intel Macs. On first launch macOS may say it's from an unidentified developer; right-click the app, choose <strong>Open</strong>, then <strong>Open</strong> again. That only happens once.</p></details>
+      <p>Yes — it's built to run on both Apple Silicon and older Intel Macs. It does need one extra step the first time you open it, because it isn't distributed through the App Store — see <a href="#firstrun">opening it the first time</a>.</p></details>
+
+    <details id="firstrun"><summary>macOS won't let me open it — what do I do?</summary>
+      <p>You'll see <em>“IB Tracker can't be opened because Apple cannot check it for malicious software.”</em> That message means the app hasn't been through Apple's paid notarisation service — not that anything is wrong with it. Here's how to open it:</p>
+      <ol>
+        <li>Drag IB Tracker to your <strong>Applications</strong> folder first, then double-click it. It'll be blocked — that's expected, and it's the step that makes the next one appear.</li>
+        <li>Open <strong>System Settings</strong> → <strong>Privacy &amp; Security</strong>.</li>
+        <li>Scroll to the bottom, to <strong>Security</strong>. You'll see “IB Tracker was blocked to protect your Mac.” Click <strong>Open Anyway</strong>.</li>
+        <li>Confirm with Touch ID or your password, then click <strong>Open</strong>.</li>
+      </ol>
+      <p>You only do this once. After that it opens normally, and updates install without asking again.</p>
+      <p class="muted">On macOS Sequoia and later, Control-clicking the app and choosing Open no longer works — Apple removed that shortcut, so System Settings is the only route.</p></details>
 
     <details><summary>Is the coach an AI? Does it send my data anywhere?</summary>
       <p>The built-in coach runs entirely on your machine and sends nothing. If you want full AI conversations you can add your own OpenRouter API key, and only then is your study data sent to OpenRouter when you chat. The key is stored locally and is never included in backups.</p></details>
@@ -392,8 +403,8 @@
       <a class="btn btn-lg" href="https://github.com/ib-tracker/ib-tracker.github.io/releases/latest/download/IB.Tracker.dmg">Download for macOS</a>
     </div>
     <p class="cta-note">
-      Open the <code>.dmg</code>, drag IB Tracker to Applications, then right-click
-      it and choose <strong>Open</strong> the first time. Done.
+      Open the <code>.dmg</code> and drag IB Tracker to Applications, then follow
+      <a href="#firstrun">the first-launch steps</a> once.
     </p>
   </div>
 </section>
@@ -404,6 +415,30 @@
     <span>Not affiliated with or endorsed by the International Baccalaureate Organization.</span>
   </div>
 </footer>
+
+<script>
+  /* The first-launch instructions live in a <details> so they sit with the other
+     FAQ answers, but browsers scroll to a linked <details> without opening it.
+     Someone arriving from "how to open it" has just been blocked by macOS and
+     would land on a collapsed section — the worst possible moment to hide the
+     answer. Open it on click, and on load for a pasted #firstrun link. */
+  function openLinkedDetails(id) {
+    var el = id && document.getElementById(id);
+    if (el && el.tagName === "DETAILS") { el.open = true; return el; }
+    return null;
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (a) openLinkedDetails(a.getAttribute("href").slice(1));
+  });
+  window.addEventListener("hashchange", function () {
+    openLinkedDetails(location.hash.slice(1));
+  });
+  if (location.hash) {
+    var t = openLinkedDetails(location.hash.slice(1));
+    if (t) t.scrollIntoView();
+  }
+</script>
 
 </body>
 </html>
