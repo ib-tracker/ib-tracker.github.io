@@ -3,95 +3,400 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IB Study Tracker — Download</title>
-<meta name="description" content="A complete, self-contained IB study tracker. No account, no internet, no setup.">
+<title>IB Study Tracker — your whole Diploma in one place</title>
+<meta name="description" content="Tasks, deadlines, IAs, the EE, predicted points and a study coach — one Mac app that runs entirely offline and keeps your data on your own laptop.">
 <style>
-  :root {
-    --page: #f6f6f2; --surface: #fcfcfb; --surface-2: #f1f0ec;
-    --ink: #191918; --ink-2: #52514e; --ink-3: #898781;
-    --hairline: #e4e3dc;
-    --accent: #4f46e5; --accent-strong: #4338ca; --accent-ink: #fff;
-    --accent-soft: #eceafc; --accent-soft-ink: #4338ca;
+  :root{
+    --page:#f6f6f2; --surface:#fcfcfb; --surface-2:#f1f0ec; --surface-3:#e9e8e2;
+    --ink:#191918; --ink-2:#52514e; --ink-3:#898781;
+    --hairline:#e4e3dc; --hairline-2:#d8d7cf;
+    --accent:#4f46e5; --accent-strong:#4338ca; --accent-ink:#fff;
+    --accent-soft:#eceafc; --accent-soft-ink:#4338ca;
+    --good:#0ca30c; --good-soft:#e3f4e3; --good-ink:#096f09;
+    --shadow:0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.07);
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --page: #131312; --surface: #1a1a19; --surface-2: #232322;
-      --ink: #f2f1ed; --ink-2: #b9b7b0; --ink-3: #898781;
-      --hairline: #33322f;
-      --accent: #6c63f0; --accent-strong: #7d75f3;
-      --accent-soft: #2b2950; --accent-soft-ink: #b6b1f7;
+  @media (prefers-color-scheme: dark){
+    :root{
+      --page:#131312; --surface:#1a1a19; --surface-2:#232322; --surface-3:#2b2b29;
+      --ink:#f2f1ed; --ink-2:#b9b7b0; --ink-3:#898781;
+      --hairline:#33322f; --hairline-2:#3d3c38;
+      --accent:#6c63f0; --accent-strong:#7d75f3;
+      --accent-soft:#2b2950; --accent-soft-ink:#b6b1f7;
+      --good:#2fbf6b; --good-soft:#16301f; --good-ink:#5fd88c;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.45);
     }
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 4rem 1.5rem 5rem;
-    background: var(--page); color: var(--ink);
-    font: 16px/1.6 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--page); color:var(--ink);
+    font:16px/1.65 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
   }
-  .wrap { max-width: 46rem; margin: 0 auto; }
-  h1 { font-size: clamp(2rem, 5vw, 2.75rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 .75rem; }
-  .lede { font-size: 1.15rem; color: var(--ink-2); margin: 0 0 2.5rem; }
-  .card {
-    background: var(--surface); border: 1px solid var(--hairline);
-    border-radius: 14px; padding: 1.75rem; margin-bottom: 1.25rem;
+  .wrap{max-width:64rem;margin:0 auto;padding:0 1.5rem}
+  .narrow{max-width:46rem;margin-left:auto;margin-right:auto}
+  h1,h2,h3{letter-spacing:-.022em;line-height:1.15;margin:0}
+  h1{font-size:clamp(2.2rem,5.5vw,3.4rem)}
+  h2{font-size:clamp(1.55rem,3.2vw,2.1rem);margin-bottom:.6rem}
+  h3{font-size:1.05rem;margin-bottom:.3rem}
+  p{margin:.7rem 0}
+  a{color:var(--accent)}
+  .muted{color:var(--ink-2)}
+  .small{font-size:.925rem}
+  .eyebrow{
+    font-size:.76rem;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:.7rem
   }
-  .cta {
-    display: inline-block; background: var(--accent); color: var(--accent-ink);
-    padding: .8rem 1.5rem; border-radius: 10px; font-weight: 600;
-    text-decoration: none; transition: background .15s;
-  }
-  .cta:hover { background: var(--accent-strong); }
-  .note {
-    background: var(--accent-soft); color: var(--accent-soft-ink);
-    border-radius: 10px; padding: 1rem 1.25rem; font-size: .95rem; margin-top: 1.5rem;
-  }
-  h2 { font-size: 1.05rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 1rem; }
-  ul { margin: 0; padding-left: 1.25rem; color: var(--ink-2); }
-  li { margin-bottom: .5rem; }
-  code { background: var(--surface-2); padding: .15em .45em; border-radius: 5px; font-size: .9em; }
-  footer { margin-top: 3rem; color: var(--ink-3); font-size: .9rem; }
-  a { color: var(--accent); }
+
+  /* header */
+  header{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);
+    background:color-mix(in srgb,var(--page) 88%,transparent);border-bottom:1px solid var(--hairline)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 0}
+  .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:-.01em}
+  .logo{width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-size:.78rem;font-weight:750}
+  .navlinks{display:flex;gap:1.35rem;align-items:center}
+  .navlinks a{color:var(--ink-2);text-decoration:none;font-size:.925rem}
+  .navlinks a:hover{color:var(--ink)}
+  @media (max-width:720px){ .navlinks a:not(.btn){display:none} }
+
+  .btn{display:inline-block;background:var(--accent);color:var(--accent-ink);
+    padding:.62rem 1.15rem;border-radius:9px;font-weight:600;font-size:.94rem;
+    text-decoration:none;border:1px solid transparent;transition:background .15s}
+  .btn:hover{background:var(--accent-strong)}
+  .btn-lg{padding:.85rem 1.7rem;font-size:1.02rem;border-radius:11px}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--hairline-2)}
+  .btn-ghost:hover{background:var(--surface-2)}
+  .btn[aria-disabled="true"]{background:var(--surface-3);color:var(--ink-3);
+    border-color:var(--hairline);cursor:default;pointer-events:none}
+
+  section{padding:5rem 0}
+  .hero{padding:4.5rem 0 3rem;text-align:center}
+  .lede{font-size:1.18rem;color:var(--ink-2);max-width:40rem;margin:1.1rem auto 0}
+  .cta-row{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:1.9rem}
+  .cta-note{margin-top:1rem;font-size:.9rem;color:var(--ink-3)}
+
+  .shot{width:100%;height:auto;display:block;border-radius:12px;
+    border:1px solid var(--hairline);box-shadow:var(--shadow)}
+  .shot-wrap{margin-top:3rem}
+  figcaption{margin-top:.7rem;font-size:.86rem;color:var(--ink-3);text-align:center}
+
+  .feature{display:grid;grid-template-columns:1fr 1.25fr;gap:3.2rem;align-items:center}
+  .feature.flip .copy{order:2}
+  @media (max-width:860px){ .feature{grid-template-columns:1fr;gap:1.8rem} .feature.flip .copy{order:0} }
+  .feature ul{margin:.9rem 0 0;padding-left:1.1rem;color:var(--ink-2)}
+  .feature li{margin-bottom:.45rem}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1.1rem;margin-top:2.4rem}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:13px;padding:1.35rem}
+  .card p{margin:.35rem 0 0;font-size:.93rem;color:var(--ink-2)}
+  .ico{font-size:1.35rem;line-height:1;margin-bottom:.55rem;display:block}
+
+  .band{background:var(--surface);border-block:1px solid var(--hairline)}
+  .note{background:var(--accent-soft);color:var(--accent-soft-ink);
+    border-radius:11px;padding:1.1rem 1.35rem;font-size:.94rem}
+
+  /* pricing */
+  .prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr));gap:.9rem;margin-top:2.4rem}
+  .price{background:var(--surface);border:1px solid var(--hairline);border-radius:13px;
+    padding:1.3rem 1.1rem;text-align:center;position:relative}
+  .price.best{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .tag{position:absolute;top:-.62rem;left:50%;transform:translateX(-50%);
+    background:var(--accent);color:#fff;font-size:.68rem;font-weight:650;
+    letter-spacing:.05em;text-transform:uppercase;padding:.2rem .6rem;border-radius:99px;white-space:nowrap}
+  .price .term{font-size:.86rem;color:var(--ink-3);font-weight:600;
+    letter-spacing:.05em;text-transform:uppercase}
+  .price .amt{font-size:2rem;font-weight:750;letter-spacing:-.03em;margin:.35rem 0 .1rem}
+  .price .per{font-size:.82rem;color:var(--ink-3)}
+  .price .btn{margin-top:1rem;width:100%;font-size:.88rem;padding:.5rem .5rem}
+
+  table.specs{width:100%;border-collapse:collapse;margin-top:1.2rem;font-size:.94rem}
+  table.specs th,table.specs td{text-align:left;padding:.6rem .2rem;border-bottom:1px solid var(--hairline);vertical-align:top}
+  table.specs th{color:var(--ink-3);font-weight:600;width:12rem}
+  @media (max-width:600px){ table.specs th{width:8.5rem} }
+
+  details{border-bottom:1px solid var(--hairline);padding:.95rem 0}
+  summary{cursor:pointer;font-weight:600;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"+";color:var(--accent);font-weight:700;margin-right:.6rem}
+  details[open] summary::before{content:"\2013"}
+  details p{color:var(--ink-2);font-size:.95rem;margin:.55rem 0 0}
+
+  footer{border-top:1px solid var(--hairline);padding:2.6rem 0 3.4rem;color:var(--ink-3);font-size:.88rem}
+  .foot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <h1>IB Study Tracker</h1>
+<header>
+  <div class="wrap bar">
+    <span class="brand"><span class="logo">IB</span> IB Tracker</span>
+    <nav class="navlinks">
+      <a href="#features">Features</a>
+      <a href="#data">Your data</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn" href="https://github.com/captaimrishi-ctrl/ib-tracker-updates/releases/latest">Download</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ───────────────────────── hero ───────────────────────── -->
+<div class="wrap hero">
+  <h1>Your whole Diploma,<br>in one place.</h1>
   <p class="lede">
-    Tasks, scheduling, grades, analytics and a study coach — all in one app that
-    runs entirely on your own computer. No account, no internet, no setup.
+    Every IA, the EE, TOK deadlines, CAS, your predicted points and the exam
+    countdown — tracked in one Mac app that works completely offline and keeps
+    your data on your own laptop.
+  </p>
+  <div class="cta-row">
+    <a class="btn btn-lg" href="https://github.com/captaimrishi-ctrl/ib-tracker-updates/releases/latest">Download for macOS</a>
+    <a class="btn btn-lg btn-ghost" href="#features">See what it does</a>
+  </div>
+  <p class="cta-note">
+    Free to download · Works on any Mac · No account, no sign-up, no internet needed
   </p>
 
-  <div class="card">
-    <h2>Download for macOS</h2>
-    <p style="margin-top:0;color:var(--ink-2)">
-      Open the <code>.dmg</code>, drag <strong>IB Tracker</strong> to Applications, and you're done.
-    </p>
-    <a class="cta" href="https://github.com/captaimrishi-ctrl/ib-tracker-updates/releases/latest">Download the latest release</a>
-    <div class="note">
-      <strong>First launch:</strong> macOS may say the app is from an unidentified
-      developer. Right-click the app → <strong>Open</strong> → <strong>Open</strong>.
-      This only happens once.
+  <figure class="shot-wrap">
+    <img class="shot" src="img/dashboard.jpg" width="1600" height="1075" alt="The IB Tracker dashboard showing an exam countdown, today's tasks, study streak and XP level.">
+    <figcaption>The Dashboard — today, overdue, upcoming, and how long you've actually got.</figcaption>
+  </figure>
+</div>
+
+<!-- ───────────────────── read-only, stated up front ───────────────────── -->
+<div class="wrap narrow" style="margin-bottom:1rem">
+  <div class="note">
+    <strong>Worth knowing before you install.</strong> The app is free to
+    download and comes with a full set of sample data, so you can click through
+    everything before deciding. Adding <em>your own</em> work needs a licence key.
+    Without one it stays fully readable, searchable and exportable — nothing you
+    put in is ever locked away from you.
+  </div>
+</div>
+
+<!-- ───────────────────────── features ───────────────────────── -->
+<section id="features">
+  <div class="wrap">
+    <div class="narrow" style="text-align:center">
+      <p class="eyebrow">Built for the Diploma</p>
+      <h2>It already knows how the IB works</h2>
+      <p class="muted">
+        HL and SL, the seven-point scale, core points from TOK and the EE,
+        session dates. You're not bending a generic to-do app into shape.
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="card"><span class="ico">📋</span><h3>Tasks that fit the IB</h3>
+        <p>Categorise by IA, EE, TOK, CAS, exam prep or university work. Set predecessors so revision can't start before the notes exist.</p></div>
+      <div class="card"><span class="ico">🎯</span><h3>Grades &amp; predicted points</h3>
+        <p>Current and target grades per subject, the TOK/EE core-points matrix, and a diploma-target calculator showing which subject gains you the most.</p></div>
+      <div class="card"><span class="ico">🎓</span><h3>University tracking</h3>
+        <p>Applications, deadlines, offer conditions per subject, required HL totals, and your own quick links to Common App or BridgeU.</p></div>
+      <div class="card"><span class="ico">⏱️</span><h3>Focus timer</h3>
+        <p>A session timer with a task queue that survives a refresh, optional Pomodoro cycles, and a distraction shield that counts every time you drift.</p></div>
+      <div class="card"><span class="ico">🔥</span><h3>XP, levels and streaks</h3>
+        <p>Earn XP for finishing tasks on time and logging real study minutes, with a streak multiplier. Never-ending levels and ranks.</p></div>
+      <div class="card"><span class="ico">🖨️</span><h3>Progress reports</h3>
+        <p>A print-ready PDF for any date range — highlights, study activity, grade snapshot and next deadlines. Useful when someone asks how it's going.</p></div>
     </div>
   </div>
+</section>
 
-  <div class="card">
-    <h2>Your data</h2>
-    <ul>
-      <li>Everything is saved on this computer and never leaves it.</li>
-      <li>The app updates itself — it checks once a day and asks before installing.</li>
-      <li>An update only replaces the app's own files. Your tasks, sessions, grades and settings are untouched.</li>
-      <li>Take a backup any time from Settings → <strong>Export backup</strong>.</li>
-    </ul>
+<!-- ───────────────────────── scheduler ───────────────────────── -->
+<section class="band">
+  <div class="wrap feature">
+    <div class="copy">
+      <p class="eyebrow">Scheduler</p>
+      <h2>Plans around your actual week</h2>
+      <p class="muted">
+        Tell it when you're at school and when football is, and Auto-Schedule
+        fits your work into what's genuinely left.
+      </p>
+      <ul>
+        <li>Busy blocks repeat on any set of days, with an optional end date</li>
+        <li>Travel time either side — school 8–3 with an hour's commute really blocks 7–4</li>
+        <li>Respects your daily hours, your deadlines and task predecessors</li>
+        <li>Drag and drop anything it gets wrong</li>
+      </ul>
+    </div>
+    <figure style="margin:0">
+      <img class="shot" src="img/scheduler.jpg" width="1600" height="1075" alt="The week view of the scheduler, with school and football blocked out and study sessions fitted around them.">
+    </figure>
   </div>
+</section>
 
-  <footer>
-    Editing needs a licence key, sold as prepaid blocks — nothing auto-renews.
-    Without one the app is read-only: everything can still be read, searched,
-    reported on and exported, so your work is always yours to take with you.
-  </footer>
+<!-- ───────────────────────── coach ───────────────────────── -->
+<section>
+  <div class="wrap feature flip">
+    <div class="copy">
+      <p class="eyebrow">Coach</p>
+      <h2>Ask it what to do next</h2>
+      <p class="muted">
+        A study coach that can see your real tasks, deadlines, grades and habits.
+        It works offline out of the box — no API key, no account.
+      </p>
+      <ul>
+        <li>“What should I work on now?” — answered from your actual deadlines</li>
+        <li>Give it commands: <em>set all my exam prep tasks to high priority</em></li>
+        <li>Paste a whole list of tasks and it adds them at once</li>
+        <li>Every change is shown as a preview you confirm first — nothing happens behind your back</li>
+        <li>Optionally add your own OpenRouter key for full AI chat</li>
+      </ul>
+    </div>
+    <figure style="margin:0">
+      <img class="shot" src="img/coach.jpg" width="1600" height="1075" alt="The coach chat, showing advice about a Physics IA and a proposed change waiting to be confirmed.">
+    </figure>
+  </div>
+</section>
 
-</div>
+<!-- ───────────────────────── analytics ───────────────────────── -->
+<section class="band">
+  <div class="wrap feature">
+    <div class="copy">
+      <p class="eyebrow">Analytics</p>
+      <h2>Where the time actually went</h2>
+      <p class="muted">
+        Not vanity charts — the ones that change what you do next week.
+      </p>
+      <ul>
+        <li>Workload forecast against the hours you really have</li>
+        <li>Estimate accuracy: how wrong your time guesses are, and in which direction</li>
+        <li>Time by subject, so a neglected HL is obvious</li>
+        <li>Task drag, completions and your study streak</li>
+      </ul>
+    </div>
+    <figure style="margin:0">
+      <img class="shot" src="img/analytics.jpg" width="1600" height="1075" alt="Analytics charts showing workload forecast, time by subject and completions over time.">
+    </figure>
+  </div>
+</section>
+
+<!-- ───────────────────────── data ───────────────────────── -->
+<section id="data">
+  <div class="wrap narrow" style="text-align:center">
+    <p class="eyebrow">Your data</p>
+    <h2>It stays on your laptop</h2>
+    <p class="muted">
+      There's no server, no account and no sync. Everything you type is stored
+      on your own machine and never sent anywhere. You can use the entire app
+      with the Wi-Fi off.
+    </p>
+  </div>
+  <div class="wrap grid" style="max-width:52rem">
+    <div class="card"><span class="ico">🔒</span><h3>Nothing leaves</h3>
+      <p>No telemetry, no analytics, no account to create. The only time it touches the internet is a once-a-day check for a new version, which you can switch off.</p></div>
+    <div class="card"><span class="ico">💾</span><h3>Yours to take</h3>
+      <p>Export everything to a single JSON file whenever you like. Import from another tracker via JSON or CSV. Exports never include your licence key or API key.</p></div>
+    <div class="card"><span class="ico">🔄</span><h3>Updates you approve</h3>
+      <p>The app checks for a new version once a day, shows you exactly what changed, and installs nothing until you press Update. Your work is untouched.</p></div>
+  </div>
+</section>
+
+<!-- ───────────────────────── pricing ───────────────────────── -->
+<section class="band" id="pricing">
+  <div class="wrap">
+    <div class="narrow" style="text-align:center">
+      <p class="eyebrow">Pricing</p>
+      <h2>Pay for a block. Nothing renews.</h2>
+      <p class="muted">
+        A key unlocks editing. Buy a month to get through mocks, or buy it once
+        and forget about it — there's no subscription and no card kept on file.
+      </p>
+    </div>
+
+    <div class="prices">
+      <div class="price">
+        <div class="term">1 month</div><div class="amt">£5</div><div class="per">£5.00 / month</div>
+        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
+      </div>
+      <div class="price">
+        <div class="term">3 months</div><div class="amt">£12</div><div class="per">£4.00 / month</div>
+        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
+      </div>
+      <div class="price">
+        <div class="term">6 months</div><div class="amt">£20</div><div class="per">£3.33 / month</div>
+        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
+      </div>
+      <div class="price best">
+        <span class="tag">Best value</span>
+        <div class="term">12 months</div><div class="amt">£35</div><div class="per">£2.92 / month</div>
+        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
+      </div>
+      <div class="price">
+        <div class="term">Lifetime</div><div class="amt">£60</div><div class="per">one payment, forever</div>
+        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
+      </div>
+    </div>
+
+    <p class="small muted" style="text-align:center;margin-top:1.3rem">
+      Checkout isn't live yet. The app and its sample data are fully explorable in the meantime.
+    </p>
+
+    <!-- the specifics, for whoever is actually paying -->
+    <div class="narrow" style="margin-top:3.4rem">
+      <h3 style="font-size:1.15rem;margin-bottom:.2rem">The specifics</h3>
+      <p class="small muted" style="margin-top:.2rem">
+        If someone else is paying for this, here's everything they'd reasonably want to know.
+      </p>
+      <table class="specs">
+        <tr><th>What you're buying</th><td>A licence key for one person, sold as a prepaid block of time. It unlocks editing in the app.</td></tr>
+        <tr><th>Does it auto-renew?</th><td>No. Nothing renews, no card is stored, and no subscription is created. When a block runs out you choose whether to buy another.</td></tr>
+        <tr><th>What happens after it runs out</th><td>The app becomes read-only. Everything can still be read, searched, reported on and exported in full — no work is ever held hostage.</td></tr>
+        <tr><th>Is an account needed?</th><td>No. There is no sign-up, no email verification and no login. The key is entered once in Settings.</td></tr>
+        <tr><th>Where does the data live</th><td>Only on the Mac it was typed into. Nothing is uploaded, and there is no server to breach.</td></tr>
+        <tr><th>Requirements</th><td>Any Mac — Apple Silicon or Intel — running a recent macOS. Roughly 250&nbsp;MB of disk space.</td></tr>
+        <tr><th>Updates</th><td>Included for the life of the app, not tied to the licence block.</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────── faq ───────────────────────── -->
+<section>
+  <div class="wrap narrow">
+    <h2 style="text-align:center;margin-bottom:1.8rem">Questions</h2>
+
+    <details><summary>Can I try it before paying?</summary>
+      <p>Yes. Download it and pick “try it with sample data” on the first screen — a realistic set of tasks, grades and study sessions you can click through completely. You can clear it any time in Settings.</p></details>
+
+    <details><summary>What exactly stops working without a key?</summary>
+      <p>Adding and changing things. Reading, searching, filtering, the analytics, progress reports and exporting all keep working. If a key runs out, nothing is deleted and you can still take everything with you.</p></details>
+
+    <details><summary>Does it work offline?</summary>
+      <p>Completely. There is no server. The only network request the app ever makes is a once-a-day version check, and that can be turned off in Settings.</p></details>
+
+    <details><summary>Will it run on my Mac?</summary>
+      <p>Yes — it's built to run on both Apple Silicon and older Intel Macs. On first launch macOS may say it's from an unidentified developer; right-click the app, choose <strong>Open</strong>, then <strong>Open</strong> again. That only happens once.</p></details>
+
+    <details><summary>Is the coach an AI? Does it send my data anywhere?</summary>
+      <p>The built-in coach runs entirely on your machine and sends nothing. If you want full AI conversations you can add your own OpenRouter API key, and only then is your study data sent to OpenRouter when you chat. The key is stored locally and is never included in backups.</p></details>
+
+    <details><summary>Can I move to a new laptop?</summary>
+      <p>Export a backup from Settings, install the app on the new Mac, and import it. Your licence key is not stored in the backup file, so keep the email it came in — enter it again in Settings.</p></details>
+
+    <details><summary>What about Windows or iPad?</summary>
+      <p>Not yet — this is a Mac app today. The core also runs as a plain web page in any browser, but the Mac app is the supported way to use it.</p></details>
+  </div>
+</section>
+
+<!-- ───────────────────────── closing cta ───────────────────────── -->
+<section class="band" style="text-align:center">
+  <div class="wrap narrow">
+    <h2>Start with the sample data</h2>
+    <p class="muted">See the whole thing working before you decide anything.</p>
+    <div class="cta-row">
+      <a class="btn btn-lg" href="https://github.com/captaimrishi-ctrl/ib-tracker-updates/releases/latest">Download for macOS</a>
+    </div>
+    <p class="cta-note">Open the <code>.dmg</code>, drag IB Tracker to Applications, done.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <span>IB Tracker — built for IB Diploma students.</span>
+    <span>Not affiliated with or endorsed by the International Baccalaureate Organization.</span>
+  </div>
+</footer>
+
 </body>
 </html>
