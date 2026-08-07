@@ -1,23 +1,16 @@
 {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "released": "2026-08-07",
   "notes": [
-    "Fixed a security issue: a backup or export imported from another app could contain hidden content that ran as code. Imported data is now cleaned everywhere it is displayed.",
-    "Your licence key is no longer included in exported backups. Until now, anyone you sent a backup to could read it straight out of the file.",
-    "The welcome screen, the guided tour and \"try it with sample data\" now work before a licence key is entered — previously they did nothing at all, and the welcome screen came back every launch.",
-    "Finishing the guided tour is now remembered, so it no longer replays every time you open the app.",
-    "The reminder to back up your data can now be dismissed on a copy without a licence key.",
-    "Read-only mode now applies from the moment the app opens, instead of a fraction of a second later.",
-    "The coach can now make tasks independent — try \"make all Math AI HL tasks independent\" to clear what they are waiting on.",
-    "The Coach page no longer goes blank if a saved suggestion is missing part of itself.",
-    "The coach no longer shows internal error text when it meets a change it does not recognise.",
-    "Notes, Subjects, Settings and University no longer go blank when a restored backup contains incomplete records.",
-    "Busy blocks saved without usable times are now ignored, instead of quietly reducing how much work Auto-Schedule could fit into your week.",
-    "The dialog for removing a licence key now says \"Remove\" rather than \"Delete\" — nothing is deleted."
+    "The AI coach works again. The model it used by default was retired by OpenRouter, so adding an API key and leaving the default gave you an error instead of a coach. It now uses Claude Sonnet 5, and the model list has been brought up to date. If you had the old model saved, it is switched over for you.",
+    "The University grade trend now plots a point each time one of your grades actually changes, instead of taking a weekly reading. It used to draw a flat line between real changes and its shape depended on how often you opened the app. Your existing history is kept.",
+    "The \"Save snapshot\" button on the grade trend has gone. It only existed to force one of those weekly readings, and points are now recorded on their own whenever a grade changes.",
+    "Settings is now grouped into Your studies, Coach, Appearance & app, and Data & licence, instead of one long column of eleven cards.",
+    "On the Subjects page, the \"No subject\" card's progress bar now lines up with the other cards in its row."
   ],
   "payload": {
-    "url": "https://captaimrishi-ctrl.github.io/ib-tracker-updates/updates/ib-tracker-1.2.1.zip",
-    "sha256": "2f4abab84f2727cd2af084e6f159e0f699859e4813a155cbb56978abce26a4f2",
-    "size": 204438
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.2.zip",
+    "sha256": "6f1e3133a8401a77e359081e53714dd4eb93a0393462a8979d27f02c373e9475",
+    "size": 206609
   }
 }

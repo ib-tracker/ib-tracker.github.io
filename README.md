@@ -5,14 +5,15 @@ public because GitHub Pages serves it; the app's source lives elsewhere.
 
 ```
 docs/
-  index.html            the download page   → /ib-tracker-updates/
+  index.html            the download page   → /
+  img/                  landing-page screenshots
   .nojekyll             serve files as-is, no Jekyll processing
   updates/
     version.json        the manifest installed apps poll once a day
     ib-tracker-*.zip    update payloads (index.html, css/, js/)
 ```
 
-Served at `https://captaimrishi-ctrl.github.io/ib-tracker-updates/`.
+Served at `https://ib-tracker.github.io/`.
 
 ## Publishing a release
 
@@ -37,12 +38,22 @@ makes a rollback a one-file change.
 ## The `.dmg` goes to Releases, not here
 
 The installer is ~110 MB, well past what belongs in a git repo. Attach it to a
-[GitHub Release](https://github.com/captaimrishi-ctrl/ib-tracker-updates/releases)
+[GitHub Release](https://github.com/ib-tracker/ib-tracker.github.io/releases)
 — that's where the download page points.
+
+**Attach it as `IB.Tracker.dmg`, exactly.** The download buttons link straight to
+`/releases/latest/download/IB.Tracker.dmg` so people get the installer without a
+detour through GitHub. GitHub resolves `latest` by itself, but the filename is
+literal: rename the asset and every download button on the site 404s.
 
 ## This host is load-bearing
 
-`captaimrishi-ctrl.github.io` is baked into the app's **signed** bundle, and the
+`ib-tracker.github.io` is baked into the app's **signed** bundle, and the
 app refuses any payload served from anywhere else. Renaming this repo or moving
 the account breaks auto-updates for every existing install, and the only fix is
 having each person download a new build by hand. Treat the URL as permanent.
+
+The repo name is load-bearing too: `ib-tracker.github.io` under the `ib-tracker`
+org is what makes this an **org root site** served at `/`. Any other repo name
+turns it into a project site under `/<repo-name>/`, which breaks `manifestPath`
+and `downloadPath` in the signed bundle.
