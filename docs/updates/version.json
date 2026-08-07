@@ -1,17 +1,23 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "released": "2026-08-07",
   "notes": [
-    "The app now checks for updates once a day and can install them itself — you always see what changed and press Update before anything happens.",
-    "Busy blocks can repeat on any set of days (every day, weekdays, or just Mon/Wed/Fri) and stop on an optional end date.",
-    "Busy blocks can carry travel time either side, so school 8–3 with an hour's commute really blocks 7–4 and the auto-scheduler plans around the whole trip.",
-    "Click a busy block in the week view to edit it.",
-    "University: keep your own links on each course, and add, rename or remove your quick-launch portals.",
-    "Subjects: the target arrow is hidden once you're at or above your target — the grade badge turns green instead."
+    "Fixed a security issue: a backup or export imported from another app could contain hidden content that ran as code. Imported data is now cleaned everywhere it is displayed.",
+    "Your licence key is no longer included in exported backups. Until now, anyone you sent a backup to could read it straight out of the file.",
+    "The welcome screen, the guided tour and \"try it with sample data\" now work before a licence key is entered — previously they did nothing at all, and the welcome screen came back every launch.",
+    "Finishing the guided tour is now remembered, so it no longer replays every time you open the app.",
+    "The reminder to back up your data can now be dismissed on a copy without a licence key.",
+    "Read-only mode now applies from the moment the app opens, instead of a fraction of a second later.",
+    "The coach can now make tasks independent — try \"make all Math AI HL tasks independent\" to clear what they are waiting on.",
+    "The Coach page no longer goes blank if a saved suggestion is missing part of itself.",
+    "The coach no longer shows internal error text when it meets a change it does not recognise.",
+    "Notes, Subjects, Settings and University no longer go blank when a restored backup contains incomplete records.",
+    "Busy blocks saved without usable times are now ignored, instead of quietly reducing how much work Auto-Schedule could fit into your week.",
+    "The dialog for removing a licence key now says \"Remove\" rather than \"Delete\" — nothing is deleted."
   ],
   "payload": {
-    "url": "https://captaimrishi-ctrl.github.io/ib-tracker-updates/updates/ib-tracker-1.2.0.zip",
-    "sha256": "2ea741061bb469d24c0a2799401ff33014bb8000420e1325422489d29703fc82",
-    "size": 200079
+    "url": "https://captaimrishi-ctrl.github.io/ib-tracker-updates/updates/ib-tracker-1.2.1.zip",
+    "sha256": "2f4abab84f2727cd2af084e6f159e0f699859e4813a155cbb56978abce26a4f2",
+    "size": 204438
   }
 }
