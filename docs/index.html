@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IB Study Tracker — your whole Diploma in one place</title>
 <meta name="description" content="Tasks, deadlines, IAs, the EE, predicted points and a study coach — one Mac app that runs entirely offline and keeps your data on your own laptop.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
   :root{
     --page:#f6f6f2; --surface:#fcfcfb; --surface-2:#f1f0ec; --surface-3:#e9e8e2;
@@ -53,8 +54,14 @@
     background:color-mix(in srgb,var(--page) 88%,transparent);border-bottom:1px solid var(--hairline)}
   .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 0}
   .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:-.01em}
-  .logo{width:30px;height:30px;border-radius:8px;background:var(--accent);color:#fff;
-    display:grid;place-items:center;font-size:.78rem;font-weight:750}
+  /* A hexagon cut into six — the six IB subject groups. The cuts are a mask, so
+     the gaps are genuinely transparent and the mark sits on any surface in
+     either theme.
+
+     It does NOT survive being shrunk: the gaps scale with everything else and
+     fragment the shape below about 24px. The favicon (icon.svg) is therefore a
+     plain solid hexagon, which is the only version that still reads at 16px. */
+  .logo{width:32px;height:32px;display:block;color:var(--accent)}
   .navlinks{display:flex;gap:1.35rem;align-items:center}
   .navlinks a{color:var(--ink-2);text-decoration:none;font-size:.925rem}
   .navlinks a:hover{color:var(--ink)}
@@ -122,6 +129,18 @@
   details[open] summary::before{content:"\2013"}
   details p{color:var(--ink-2);font-size:.95rem;margin:.55rem 0 0}
 
+  /* feature catalogue — four columns matching the app's own sidebar groups */
+  /* min() so the track can fall below 22rem on a narrow screen — a bare
+     minmax(22rem,1fr) refuses to shrink and pushes the page 1px wide. */
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr));
+    gap:.6rem 2.6rem;margin-top:2.6rem;align-items:start}
+  .cat-side{min-width:0}
+  .cat-side > .cat-col:first-child .cat-group{margin-top:0}
+  .cat-group{font-size:.76rem;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-3);margin:1.4rem 0 0;padding-bottom:.55rem;border-bottom:1px solid var(--hairline-2)}
+  .cat-col details:last-of-type{border-bottom:none}
+  .cat-col details em{color:var(--ink-3);font-style:normal}
+
   footer{border-top:1px solid var(--hairline);padding:2.6rem 0 3.4rem;color:var(--ink-3);font-size:.88rem}
   .foot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
 </style>
@@ -130,7 +149,22 @@
 
 <header>
   <div class="wrap bar">
-    <span class="brand"><span class="logo">IB</span> IB Tracker</span>
+    <span class="brand">
+      <svg class="logo" viewBox="0 0 64 64" role="img" aria-label="IB Tracker">
+        <defs>
+          <mask id="hexcut">
+            <path d="M32 5 L55.4 18.5 L55.4 45.5 L32 59 L8.6 45.5 L8.6 18.5 Z" fill="#fff"/>
+            <g stroke="#000" stroke-width="2.6">
+              <line x1="32" y1="32" x2="32" y2="5"/><line x1="32" y1="32" x2="55.4" y2="18.5"/>
+              <line x1="32" y1="32" x2="55.4" y2="45.5"/><line x1="32" y1="32" x2="32" y2="59"/>
+              <line x1="32" y1="32" x2="8.6" y2="45.5"/><line x1="32" y1="32" x2="8.6" y2="18.5"/>
+            </g>
+          </mask>
+        </defs>
+        <path d="M32 5 L55.4 18.5 L55.4 45.5 L32 59 L8.6 45.5 L8.6 18.5 Z"
+              fill="currentColor" mask="url(#hexcut)"/>
+      </svg>
+      IB Tracker</span>
     <nav class="navlinks">
       <a href="#features">Features</a>
       <a href="#data">Your data</a>
@@ -275,6 +309,85 @@
   </div>
 </section>
 
+<!-- ───────────────────── everything it does ───────────────────── -->
+<section id="everything">
+  <div class="wrap">
+    <div class="narrow" style="text-align:center">
+      <p class="eyebrow">Every page</p>
+      <h2>Everything it does</h2>
+      <p class="muted">
+        Fifteen pages, grouped the way they're grouped in the app's own sidebar.
+        Open any of them for what's actually in there.
+      </p>
+    </div>
+
+    <div class="cat-grid">
+      <div class="cat-side">
+      <div class="cat-col">
+        <p class="cat-group">Overview</p>
+
+        <details><summary>Dashboard</summary>
+          <p>Your whole workload in one screen: a live countdown to the exam session, what's due today, what's overdue, and what's coming. Task counts across the top, your XP level and study streak down the side, and progress against your weekly study goal.</p></details>
+
+        <details><summary>Timeline</summary>
+          <p>Every open task in one list, sorted by due date. Filter by category, priority or subject, then save the combination as a view you can jump back to — "HL only", "everything due this fortnight", whatever you actually use.</p></details>
+
+        <details><summary>Calendar</summary>
+          <p>A month at a time. Click any day to see what's due then, or switch to planned work to see the sessions you've scheduled rather than the deadlines. Subject colours carry through, so a heavy week is obvious before you're in it.</p></details>
+      </div>
+      <div class="cat-col">
+        <p class="cat-group">IB</p>
+
+        <details><summary>Subjects</summary>
+          <p>Every subject as a card with its grade and how much is left. Open one for a grade ring against your target, hours studied, task progress, and any university offer conditions riding on that subject.</p></details>
+
+        <details><summary>Core Requirements</summary>
+          <p>TOK, the Extended Essay and CAS tracked separately from ordinary tasks, because the Diploma treats them separately. Progress on each, with the deadlines that come with them.</p></details>
+
+        <details><summary>Grades</summary>
+          <p>Current and target grade per subject on the seven-point scale, plus the TOK/EE core-points matrix. The diploma-target calculator shows your predicted total and — more usefully — which single subject would gain you the most points for the effort.</p></details>
+
+        <details><summary>University</summary>
+          <p>Applications with their deadlines, offer conditions broken down per subject, required HL totals shown as bars against what you're actually predicted, tuition, required materials, and linked tasks. Plus your own quick links to Common App, BridgeU or wherever you apply.</p></details>
+      </div>
+      </div>
+      <div class="cat-side">
+      <div class="cat-col">
+        <p class="cat-group">Study</p>
+
+        <details><summary>Study Session</summary>
+          <p>A focused timer with a queue. Line up what you're working through, start the clock, and it keeps running across a reload. Optional Pomodoro cycling with breaks. Everything you log feeds the analytics and your streak.</p></details>
+
+        <details><summary>Focus</summary>
+          <p>A stricter mode for when you actually need it. Set an allow-list of what you're permitting yourself, lock in, and it counts every time you leave. Today's priorities and today's plan sit alongside so you're not hunting for what's next.
+          <br><br><em>Being straight with you:</em> it locks this app and counts your leaves — it can't force-quit anything else on your Mac.</p></details>
+
+        <details><summary>Scheduler</summary>
+          <p>Drag a task onto a slot, or click the task then the slot. Auto-Schedule fits your open work around the hours you've said you have, respecting busy blocks for school, sport or anything repeating. Unscheduled tasks stay in a column beside it so nothing quietly disappears.</p></details>
+
+        <details><summary>Analytics</summary>
+          <p>Five charts: a thirty-day workload forecast against the hours you actually have, study time per day, where the time goes by subject, tasks finished per day, and estimated versus actual session length — that last one is how you find out your "one hour" IA sessions are really two.</p></details>
+
+        <details><summary>Coach</summary>
+          <p>Ask it what to do next. It reads your real tasks, deadlines and grades and answers from them, offline, with no key or internet needed. Add an OpenRouter API key and it becomes a full AI conversation instead.
+          <br><br>It never edits anything directly: every change arrives as a preview card you confirm or cancel.</p></details>
+      </div>
+      <div class="cat-col">
+        <p class="cat-group">Workspace</p>
+
+        <details><summary>Templates</summary>
+          <p>Reusable task structures. Build "IA write-up" once with its sub-tasks and deadlines, then create the whole thing in one click the next time — and the time after that.</p></details>
+
+        <details><summary>Notes</summary>
+          <p>Somewhere for what isn't a task: formulae, essay ideas, feedback from a teacher. Rich text with bold, italic, underline and lists, pinned notes, and search across everything. Saved on your computer like the rest of it.</p></details>
+
+        <details><summary>Settings</summary>
+          <p>Your subjects with their own emoji and colour, the hours you have free each day, your exam session date, weekly study goal, coach tone, light or dark, and everything to do with your data — export a backup, import one, or erase the lot.</p></details>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
 <!-- ───────────────────────── data ───────────────────────── -->
 <section id="data">
   <div class="wrap narrow" style="text-align:center">
@@ -306,29 +419,30 @@
         A key unlocks editing. Buy a month to get through mocks, or buy it once
         and forget about it — there's no subscription and no card kept on file.
       </p>
+      <p class="note" style="text-align:left;margin-top:1.4rem">
+        <strong>Not on sale yet.</strong> These are the prices it will launch at.
+        Until then the app is free to download and everything in it is readable,
+        searchable and exportable — adding your own work is what needs a key.
+        Leave your email and you'll hear once, when keys go on sale.
+      </p>
     </div>
 
     <div class="prices">
       <div class="price">
         <div class="term">1 month</div><div class="amt">£5</div><div class="per">£5.00 / month</div>
-        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
       </div>
       <div class="price">
         <div class="term">3 months</div><div class="amt">£12</div><div class="per">£4.00 / month</div>
-        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
       </div>
       <div class="price">
         <div class="term">6 months</div><div class="amt">£20</div><div class="per">£3.33 / month</div>
-        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
       </div>
       <div class="price best">
         <span class="tag">Best value</span>
         <div class="term">12 months</div><div class="amt">£35</div><div class="per">£2.92 / month</div>
-        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
       </div>
       <div class="price">
         <div class="term">Lifetime</div><div class="amt">£60</div><div class="per">one payment, forever</div>
-        <a class="btn" aria-disabled="true" href="#pricing">Coming soon</a>
       </div>
     </div>
 
@@ -342,7 +456,12 @@
       <p class="small muted" style="margin-top:.2rem">
         If someone else is paying for this, here's everything they'd reasonably want to know.
       </p>
-      <table class="specs">
+      <div style="text-align:center;margin-top:1.8rem">
+      <a class="btn btn-lg" id="waitlist-btn" href="WAITLIST_URL_GOES_HERE">Email me when keys go on sale</a>
+      <p class="cta-note">One email, when it launches. Nothing else, ever.</p>
+    </div>
+
+    <table class="specs">
         <tr><th>What you're buying</th><td>A licence key for one person, sold as a prepaid block of time. It unlocks editing in the app.</td></tr>
         <tr><th>Does it auto-renew?</th><td>No. Nothing renews, no card is stored, and no subscription is created. When a block runs out you choose whether to buy another.</td></tr>
         <tr><th>What happens after it runs out</th><td>The app becomes read-only. Everything can still be read, searched, reported on and exported in full — no work is ever held hostage.</td></tr>

@@ -1,0 +1,6 @@
+<!-- Small-size mark: a plain solid hexagon. The divided version used in the site
+     header fragments below ~24px, and a favicon is rendered at 16–32px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="IB Tracker">
+  <rect width="64" height="64" rx="14" fill="#4f46e5"/>
+  <path d="M32 14 L47.6 23 L47.6 41 L32 50 L16.4 41 L16.4 23 Z" fill="#fff"/>
+</svg>
