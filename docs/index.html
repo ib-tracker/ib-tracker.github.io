@@ -65,6 +65,11 @@
   .navlinks{display:flex;gap:1.35rem;align-items:center}
   .navlinks a{color:var(--ink-2);text-decoration:none;font-size:.925rem}
   .navlinks a:hover{color:var(--ink)}
+  /* The Download button lives inside .navlinks, and `.navlinks a` outranks
+     `.btn` on specificity — so it was being painted muted grey-purple on the
+     accent fill and did not read as a button at all. */
+  .navlinks a.btn{color:var(--accent-ink)}
+  .navlinks a.btn:hover{color:var(--accent-ink)}
   @media (max-width:720px){ .navlinks a:not(.btn){display:none} }
 
   .btn{display:inline-block;background:var(--accent);color:var(--accent-ink);
@@ -76,6 +81,13 @@
   .btn-ghost:hover{background:var(--surface-2)}
   .btn[aria-disabled="true"]{background:var(--surface-3);color:var(--ink-3);
     border-color:var(--hairline);cursor:default;pointer-events:none}
+  /* White on the dark-theme accent measures 4.49:1 — just under the 4.5 needed
+     for body-size text. Nudging only the button fill (not --accent, which would
+     drag every link down with it) takes it to 4.86 and the hover to 5.88. */
+  @media (prefers-color-scheme: dark){
+    .btn:not(.btn-ghost){background:#655cec}
+    .btn:not(.btn-ghost):hover{background:#574ee0}
+  }
 
   section{padding:5rem 0}
   .hero{padding:4.5rem 0 3rem;text-align:center}
@@ -135,6 +147,18 @@
   .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr));
     gap:.6rem 2.6rem;margin-top:2.6rem;align-items:start}
   .cat-side{min-width:0}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:1.6rem 0 0}
+  .steps li{counter-increment:s;position:relative;padding:0 0 1.05rem 2.8rem;color:var(--ink-2)}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:-.05rem;
+    width:1.75rem;height:1.75rem;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:.82rem;font-weight:700;display:grid;place-items:center}
+  .steps strong{color:var(--ink)}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:1.6rem 0 0}
+  .steps li{counter-increment:s;position:relative;padding:0 0 1.05rem 2.6rem;color:var(--ink-2)}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:-.1rem;
+    width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:.82rem;font-weight:700;display:grid;place-items:center}
+  .steps strong{color:var(--ink)}
   .cat-side > .cat-col:first-child .cat-group{margin-top:0}
   .cat-group{font-size:.76rem;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
     color:var(--ink-3);margin:1.4rem 0 0;padding-bottom:.55rem;border-bottom:1px solid var(--hairline-2)}
@@ -195,7 +219,7 @@
   </p>
 
   <figure class="shot-wrap">
-    <img class="shot" src="img/dashboard.jpg" width="1600" height="1075" alt="The IB Tracker dashboard showing an exam countdown, today's tasks, study streak and XP level.">
+    <img class="shot" src="img/dashboard.png" width="1600" height="1075" alt="The IB Tracker dashboard showing an exam countdown, today's tasks, study streak and XP level.">
     <figcaption>The Dashboard — today, overdue, upcoming, and how long you've actually got.</figcaption>
   </figure>
 </div>
@@ -210,6 +234,39 @@
     put in is ever locked away from you.
   </div>
 </div>
+
+<!-- ─────────────────── after you download ─────────────────── -->
+<section id="firstrun" class="band">
+  <div class="wrap narrow">
+    <p class="eyebrow">After you download</p>
+    <h2>Opening it the first time</h2>
+    <p class="muted">
+      macOS will refuse to open it and say Apple &ldquo;cannot check it for
+      malicious software&rdquo;. That means the app hasn't been through Apple's
+      paid notarisation service &mdash; not that anything is wrong with it.
+      Here's the way through, and you only do it once.
+    </p>
+
+    <ol class="steps">
+      <li><strong>Drag IB Tracker to Applications, then double-click it.</strong>
+          It'll be blocked. That's expected &mdash; and it's the step that makes
+          the next one possible, so don't skip it.</li>
+      <li><strong>Open System Settings &rarr; Privacy &amp; Security.</strong></li>
+      <li><strong>Scroll to the bottom, to Security.</strong> You'll see
+          &ldquo;IB Tracker was blocked to protect your Mac&rdquo;. Click
+          <strong>Open Anyway</strong>.</li>
+      <li><strong>Confirm with Touch ID or your password</strong>, then click
+          <strong>Open</strong>.</li>
+    </ol>
+
+    <p class="small muted">
+      After that it opens normally, and updates install without asking again.
+      On macOS Sequoia and later, Control-clicking the app and choosing Open no
+      longer works &mdash; Apple removed that shortcut, so System Settings is the
+      only route.
+    </p>
+  </div>
+</section>
 
 <!-- ───────────────────────── features ───────────────────────── -->
 <section id="features">
@@ -258,7 +315,7 @@
       </ul>
     </div>
     <figure style="margin:0">
-      <img class="shot" src="img/scheduler.jpg" width="1600" height="1075" alt="The week view of the scheduler, with school and football blocked out and study sessions fitted around them.">
+      <img class="shot" src="img/scheduler.png" width="1600" height="1075" alt="The week view of the scheduler, with school and football blocked out and study sessions fitted around them.">
     </figure>
   </div>
 </section>
@@ -282,7 +339,7 @@
       </ul>
     </div>
     <figure style="margin:0">
-      <img class="shot" src="img/coach.jpg" width="1600" height="1075" alt="The coach chat, showing advice about a Physics IA and a proposed change waiting to be confirmed.">
+      <img class="shot" src="img/coach.png" width="1600" height="1075" alt="The coach chat, showing advice about a Physics IA and a proposed change waiting to be confirmed.">
     </figure>
   </div>
 </section>
@@ -304,7 +361,7 @@
       </ul>
     </div>
     <figure style="margin:0">
-      <img class="shot" src="img/analytics.jpg" width="1600" height="1075" alt="Analytics charts showing workload forecast, time by subject and completions over time.">
+      <img class="shot" src="img/analytics.png" width="1600" height="1075" alt="Analytics charts showing workload forecast, time by subject and completions over time.">
     </figure>
   </div>
 </section>
@@ -492,16 +549,8 @@
     <details><summary>Will it run on my Mac?</summary>
       <p>Yes — it's built to run on both Apple Silicon and older Intel Macs. It does need one extra step the first time you open it, because it isn't distributed through the App Store — see <a href="#firstrun">opening it the first time</a>.</p></details>
 
-    <details id="firstrun"><summary>macOS won't let me open it — what do I do?</summary>
-      <p>You'll see <em>“IB Tracker can't be opened because Apple cannot check it for malicious software.”</em> That message means the app hasn't been through Apple's paid notarisation service — not that anything is wrong with it. Here's how to open it:</p>
-      <ol>
-        <li>Drag IB Tracker to your <strong>Applications</strong> folder first, then double-click it. It'll be blocked — that's expected, and it's the step that makes the next one appear.</li>
-        <li>Open <strong>System Settings</strong> → <strong>Privacy &amp; Security</strong>.</li>
-        <li>Scroll to the bottom, to <strong>Security</strong>. You'll see “IB Tracker was blocked to protect your Mac.” Click <strong>Open Anyway</strong>.</li>
-        <li>Confirm with Touch ID or your password, then click <strong>Open</strong>.</li>
-      </ol>
-      <p>You only do this once. After that it opens normally, and updates install without asking again.</p>
-      <p class="muted">On macOS Sequoia and later, Control-clicking the app and choosing Open no longer works — Apple removed that shortcut, so System Settings is the only route.</p></details>
+    <details><summary>macOS won't let me open it — what do I do?</summary>
+      <p>One extra step the first time, because the app isn't distributed through the App Store. The steps are in <a href="#firstrun">After you download</a>, above.</p></details>
 
     <details><summary>Is the coach an AI? Does it send my data anywhere?</summary>
       <p>The built-in coach runs entirely on your machine and sends nothing. If you want full AI conversations you can add your own OpenRouter API key, and only then is your study data sent to OpenRouter when you chat. The key is stored locally and is never included in backups.</p></details>
@@ -548,8 +597,19 @@
     return null;
   }
   document.addEventListener("click", function (e) {
-    var a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (a) openLinkedDetails(a.getAttribute("href").slice(1));
+    var a = e.target.closest && e.target.closest("a[href]");
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    if (href.charAt(0) === "#") { openLinkedDetails(href.slice(1)); return; }
+
+    /* Downloading is the moment people hit the Gatekeeper wall, and the steps
+       are useless if they have to go looking. The link is left alone — the
+       browser starts the .dmg on its own and does not navigate — and the page
+       moves to the instructions underneath it. */
+    if (href.indexOf("/releases/latest/download/") !== -1) {
+      var target = document.getElementById("firstrun");
+      if (target) setTimeout(function () { target.scrollIntoView({ behavior: "smooth", block: "start" }); }, 250);
+    }
   });
   window.addEventListener("hashchange", function () {
     openLinkedDetails(location.hash.slice(1));

@@ -1,16 +1,15 @@
 {
-  "version": "1.2.2",
-  "released": "2026-08-07",
+  "version": "1.2.3",
+  "released": "2026-08-08",
   "notes": [
-    "The AI coach works again. The model it used by default was retired by OpenRouter, so adding an API key and leaving the default gave you an error instead of a coach. It now uses Claude Sonnet 5, and the model list has been brought up to date. If you had the old model saved, it is switched over for you.",
-    "The University grade trend now plots a point each time one of your grades actually changes, instead of taking a weekly reading. It used to draw a flat line between real changes and its shape depended on how often you opened the app. Your existing history is kept.",
-    "The \"Save snapshot\" button on the grade trend has gone. It only existed to force one of those weekly readings, and points are now recorded on their own whenever a grade changes.",
-    "Settings is now grouped into Your studies, Coach, Appearance & app, and Data & licence, instead of one long column of eleven cards.",
-    "On the Subjects page, the \"No subject\" card's progress bar now lines up with the other cards in its row."
+    "A new look. The old \"IB\" tile has been replaced with a hexagon split into six — one part for each IB subject group. You'll see it in the sidebar straight away; the Dock and Finder icon changes too, but only if you install the new download rather than taking this as an update.",
+    "Sample data now uses a real exam date. It used to invent one four months out, which was never an actual IB session. It now points at the next May session, so the countdown on the Dashboard means something from the first screen you see.",
+    "The coach button in the bottom-right corner no longer sits on top of your work in a narrow window. It was covering the values on the right-hand side of the University requirements, among other things.",
+    "Opening a subject no longer leaves a large empty gap beside the grade ring."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.2.zip",
-    "sha256": "6f1e3133a8401a77e359081e53714dd4eb93a0393462a8979d27f02c373e9475",
-    "size": 206609
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.3.zip",
+    "sha256": "d49efd09b9ac8acdf9f06c556a33b07df68c255ff74fe5da53564a7dc642c761",
+    "size": 207604
   }
 }
