@@ -1,15 +1,13 @@
 {
-  "version": "1.2.3",
+  "version": "1.2.4",
   "released": "2026-08-08",
   "notes": [
-    "A new look. The old \"IB\" tile has been replaced with a hexagon split into six — one part for each IB subject group. You'll see it in the sidebar straight away; the Dock and Finder icon changes too, but only if you install the new download rather than taking this as an update.",
-    "Sample data now uses a real exam date. It used to invent one four months out, which was never an actual IB session. It now points at the next May session, so the countdown on the Dashboard means something from the first screen you see.",
-    "The coach button in the bottom-right corner no longer sits on top of your work in a narrow window. It was covering the values on the right-hand side of the University requirements, among other things.",
-    "Opening a subject no longer leaves a large empty gap beside the grade ring."
+    "IB Tracker now runs natively on Apple Silicon. Until now it was an Intel build running through Apple's Rosetta translation layer, which is why macOS had started warning that it \"includes a component that will not work with a future release of macOS\". That warning is gone, and the app is faster and lighter for it.",
+    "This download needs an Apple Silicon Mac — an M1 or newer. If you have an older Intel Mac, don't install it: stay on the version you have, which keeps working and keeps updating."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.3.zip",
-    "sha256": "d49efd09b9ac8acdf9f06c556a33b07df68c255ff74fe5da53564a7dc642c761",
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.4.zip",
+    "sha256": "204bb4ae7eb21064b6c0ce9170b0a29f67b7b87b129acabd293f75462b2a8042",
     "size": 207604
   }
 }
