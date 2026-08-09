@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IB Study Tracker — your whole Diploma in one place</title>
-<meta name="description" content="Tasks, deadlines, IAs, the EE, predicted points and a study coach — one Mac app that runs entirely offline and keeps your data on your own laptop.">
+<title>IB Tracker: your whole Diploma in one place</title>
+<meta name="description" content="Tasks, deadlines, IAs, the EE, predicted points and a study coach in one Mac app. Runs entirely offline and keeps your data on your own laptop.">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
   :root{
@@ -54,8 +54,8 @@
     background:color-mix(in srgb,var(--page) 88%,transparent);border-bottom:1px solid var(--hairline)}
   .bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 0}
   .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:-.01em}
-  /* A hexagon cut into six — the six IB subject groups. The cuts are a mask, so
-     the gaps are genuinely transparent and the mark sits on any surface in
+  /* A hexagon cut into six, for the six IB subject groups. The cuts are a mask,
+     so the gaps are genuinely transparent and the mark sits on any surface in
      either theme.
 
      It does NOT survive being shrunk: the gaps scale with everything else and
@@ -66,7 +66,7 @@
   .navlinks a{color:var(--ink-2);text-decoration:none;font-size:.925rem}
   .navlinks a:hover{color:var(--ink)}
   /* The Download button lives inside .navlinks, and `.navlinks a` outranks
-     `.btn` on specificity — so it was being painted muted grey-purple on the
+     `.btn` on specificity, so it was being painted muted grey-purple on the
      accent fill and did not read as a button at all. */
   .navlinks a.btn{color:var(--accent-ink)}
   .navlinks a.btn:hover{color:var(--accent-ink)}
@@ -81,7 +81,7 @@
   .btn-ghost:hover{background:var(--surface-2)}
   .btn[aria-disabled="true"]{background:var(--surface-3);color:var(--ink-3);
     border-color:var(--hairline);cursor:default;pointer-events:none}
-  /* White on the dark-theme accent measures 4.49:1 — just under the 4.5 needed
+  /* White on the dark-theme accent measures 4.49:1, just under the 4.5 needed
      for body-size text. Nudging only the button fill (not --accent, which would
      drag every link down with it) takes it to 4.86 and the hover to 5.88. */
   @media (prefers-color-scheme: dark){
@@ -115,6 +115,11 @@
   .note{background:var(--accent-soft);color:var(--accent-soft-ink);
     border-radius:11px;padding:1.1rem 1.35rem;font-size:.94rem}
 
+  /* the maker note: set slightly larger and looser than body copy, because it
+     is the one place on the page a person is speaking rather than a product */
+  .maker p{font-size:1.06rem;color:var(--ink-2);max-width:38rem}
+  .maker .sig{margin-top:1.4rem;font-size:.9rem;color:var(--ink-3)}
+
   /* pricing */
   .prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr));gap:.9rem;margin-top:2.4rem}
   .price{background:var(--surface);border:1px solid var(--hairline);border-radius:13px;
@@ -141,29 +146,21 @@
   details[open] summary::before{content:"\2013"}
   details p{color:var(--ink-2);font-size:.95rem;margin:.55rem 0 0}
 
-  /* feature catalogue — four columns matching the app's own sidebar groups */
-  /* min() so the track can fall below 22rem on a narrow screen — a bare
-     minmax(22rem,1fr) refuses to shrink and pushes the page 1px wide. */
-  .cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr));
-    gap:.6rem 2.6rem;margin-top:2.6rem;align-items:start}
-  .cat-side{min-width:0}
   .steps{counter-reset:s;list-style:none;padding:0;margin:1.6rem 0 0}
   .steps li{counter-increment:s;position:relative;padding:0 0 1.05rem 2.8rem;color:var(--ink-2)}
   .steps li::before{content:counter(s);position:absolute;left:0;top:-.05rem;
     width:1.75rem;height:1.75rem;border-radius:50%;background:var(--accent);color:#fff;
     font-size:.82rem;font-weight:700;display:grid;place-items:center}
   .steps strong{color:var(--ink)}
-  .steps{counter-reset:s;list-style:none;padding:0;margin:1.6rem 0 0}
-  .steps li{counter-increment:s;position:relative;padding:0 0 1.05rem 2.6rem;color:var(--ink-2)}
-  .steps li::before{content:counter(s);position:absolute;left:0;top:-.1rem;
-    width:1.7rem;height:1.7rem;border-radius:50%;background:var(--accent);color:#fff;
-    font-size:.82rem;font-weight:700;display:grid;place-items:center}
-  .steps strong{color:var(--ink)}
-  .cat-side > .cat-col:first-child .cat-group{margin-top:0}
-  .cat-group{font-size:.76rem;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
-    color:var(--ink-3);margin:1.4rem 0 0;padding-bottom:.55rem;border-bottom:1px solid var(--hairline-2)}
-  .cat-col details:last-of-type{border-bottom:none}
-  .cat-col details em{color:var(--ink-3);font-style:normal}
+
+  /* the full page list. Names only: the point is to show the shape of the app,
+     and a paragraph about each of fifteen pages is a wall nobody reads. */
+  .pagelist{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));
+    gap:1.8rem 2rem;margin-top:2.4rem}
+  .pagelist h3{font-size:.76rem;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 .6rem;padding-bottom:.5rem;border-bottom:1px solid var(--hairline-2)}
+  .pagelist ul{list-style:none;padding:0;margin:0;color:var(--ink-2);font-size:.95rem}
+  .pagelist li{padding:.25rem 0}
 
   footer{border-top:1px solid var(--hairline);padding:2.6rem 0 3.4rem;color:var(--ink-3);font-size:.88rem}
   .foot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
@@ -203,8 +200,8 @@
   <h1>Your whole Diploma,<br>in one place.</h1>
   <p class="lede">
     Every IA, the EE, TOK deadlines, CAS, your predicted points and the exam
-    countdown — tracked in one Mac app that works completely offline and keeps
-    your data on your own laptop.
+    countdown, in one Mac app. It runs offline and keeps your data on your
+    own laptop.
   </p>
   <div class="cta-row">
     <a class="btn btn-lg" href="https://github.com/ib-tracker/ib-tracker.github.io/releases/latest/download/IB.Tracker.dmg">Download for macOS</a>
@@ -214,59 +211,25 @@
     Free to download · M1 Macs and newer · No account, no sign-up, no internet needed
   </p>
   <p class="cta-note">
-    First launch needs one extra step — <a href="#firstrun">how to open it</a>.
-    macOS blocks apps that aren't from the App Store until you allow them, once.
+    First launch takes one extra step, because the app isn't from the App Store.
+    <a href="#firstrun">Here's how to open it</a>.
   </p>
 
   <figure class="shot-wrap">
     <img class="shot" src="img/dashboard.png" width="1600" height="1075" alt="The IB Tracker dashboard showing an exam countdown, today's tasks, study streak and XP level.">
-    <figcaption>The Dashboard — today, overdue, upcoming, and how long you've actually got.</figcaption>
+    <figcaption>Today, overdue, upcoming, and how long you've actually got.</figcaption>
   </figure>
 </div>
 
-<!-- ───────────────────── read-only, stated up front ───────────────────── -->
+<!-- ───────────────── what the free version is, stated up front ───────────────── -->
 <div class="wrap narrow" style="margin-bottom:1rem">
   <div class="note">
-    <strong>Worth knowing before you install.</strong> The app is free to
-    download and comes with a full set of sample data, so you can click through
-    everything before deciding. Adding <em>your own</em> work needs a licence key.
-    Without one it stays fully readable, searchable and exportable — nothing you
-    put in is ever locked away from you.
+    <strong>Free to download, sample data included</strong>, so you can click
+    through the whole app first. Adding <em>your own</em>
+    work needs a licence key. Without one everything you've already put in stays
+    readable, searchable and exportable.
   </div>
 </div>
-
-<!-- ─────────────────── after you download ─────────────────── -->
-<section id="firstrun" class="band">
-  <div class="wrap narrow">
-    <p class="eyebrow">After you download</p>
-    <h2>Opening it the first time</h2>
-    <p class="muted">
-      macOS will refuse to open it and say Apple &ldquo;cannot check it for
-      malicious software&rdquo;. That means the app hasn't been through Apple's
-      paid notarisation service &mdash; not that anything is wrong with it.
-      Here's the way through, and you only do it once.
-    </p>
-
-    <ol class="steps">
-      <li><strong>Drag IB Tracker to Applications, then double-click it.</strong>
-          It'll be blocked. That's expected &mdash; and it's the step that makes
-          the next one possible, so don't skip it.</li>
-      <li><strong>Open System Settings &rarr; Privacy &amp; Security.</strong></li>
-      <li><strong>Scroll to the bottom, to Security.</strong> You'll see
-          &ldquo;IB Tracker was blocked to protect your Mac&rdquo;. Click
-          <strong>Open Anyway</strong>.</li>
-      <li><strong>Confirm with Touch ID or your password</strong>, then click
-          <strong>Open</strong>.</li>
-    </ol>
-
-    <p class="small muted">
-      After that it opens normally, and updates install without asking again.
-      On macOS Sequoia and later, Control-clicking the app and choosing Open no
-      longer works &mdash; Apple removed that shortcut, so System Settings is the
-      only route.
-    </p>
-  </div>
-</section>
 
 <!-- ───────────────────────── features ───────────────────────── -->
 <section id="features">
@@ -284,7 +247,7 @@
       <div class="card"><span class="ico">📋</span><h3>Tasks that fit the IB</h3>
         <p>Categorise by IA, EE, TOK, CAS, exam prep or university work. Set predecessors so revision can't start before the notes exist.</p></div>
       <div class="card"><span class="ico">🎯</span><h3>Grades &amp; predicted points</h3>
-        <p>Current and target grades per subject, the TOK/EE core-points matrix, and a diploma-target calculator showing which subject gains you the most.</p></div>
+        <p>Current and target grades per subject, the TOK/EE core-points matrix, and a calculator showing which subject gains you the most.</p></div>
       <div class="card"><span class="ico">🎓</span><h3>University tracking</h3>
         <p>Applications, deadlines, offer conditions per subject, required HL totals, and your own quick links to Common App or BridgeU.</p></div>
       <div class="card"><span class="ico">⏱️</span><h3>Focus timer</h3>
@@ -292,7 +255,7 @@
       <div class="card"><span class="ico">🔥</span><h3>XP, levels and streaks</h3>
         <p>Earn XP for finishing tasks on time and logging real study minutes, with a streak multiplier. Never-ending levels and ranks.</p></div>
       <div class="card"><span class="ico">🖨️</span><h3>Progress reports</h3>
-        <p>A print-ready PDF for any date range — highlights, study activity, grade snapshot and next deadlines. Useful when someone asks how it's going.</p></div>
+        <p>A print-ready PDF for any date range: highlights, study activity, grade snapshot and next deadlines. Useful when someone asks how it's going.</p></div>
     </div>
   </div>
 </section>
@@ -309,7 +272,7 @@
       </p>
       <ul>
         <li>Busy blocks repeat on any set of days, with an optional end date</li>
-        <li>Travel time either side — school 8–3 with an hour's commute really blocks 7–4</li>
+        <li>Travel time either side, so school 8 to 3 with an hour's commute really blocks 7 to 4</li>
         <li>Respects your daily hours, your deadlines and task predecessors</li>
         <li>Drag and drop anything it gets wrong</li>
       </ul>
@@ -328,13 +291,13 @@
       <h2>Ask it what to do next</h2>
       <p class="muted">
         A study coach that can see your real tasks, deadlines, grades and habits.
-        It works offline out of the box — no API key, no account.
+        It works offline out of the box, with no API key and no account.
       </p>
       <ul>
-        <li>“What should I work on now?” — answered from your actual deadlines</li>
+        <li>“What should I work on now?”, answered from your actual deadlines</li>
         <li>Give it commands: <em>set all my exam prep tasks to high priority</em></li>
         <li>Paste a whole list of tasks and it adds them at once</li>
-        <li>Every change is shown as a preview you confirm first — nothing happens behind your back</li>
+        <li>Every change appears as a preview you confirm first, so nothing happens behind your back</li>
         <li>Optionally add your own OpenRouter key for full AI chat</li>
       </ul>
     </div>
@@ -351,7 +314,7 @@
       <p class="eyebrow">Analytics</p>
       <h2>Where the time actually went</h2>
       <p class="muted">
-        Not vanity charts — the ones that change what you do next week.
+        The charts that change what you do next week.
       </p>
       <ul>
         <li>Workload forecast against the hours you really have</li>
@@ -366,85 +329,63 @@
   </div>
 </section>
 
+<!-- ───────────────────────── who made it ───────────────────────── -->
+<section>
+  <div class="wrap narrow maker">
+    <p class="eyebrow">Why this exists</p>
+    <h2>I'm an IB student. I built this for myself first.</h2>
+    <p>
+      The planners I tried all wanted me to describe the Diploma as a generic
+      project full of generic tasks. None of them knew what an IA was, or that
+      TOK and the Extended Essay are worth three points between them, or that
+      my exam session is a fixed date I could be counting down to.
+    </p>
+    <p>
+      So I wrote the thing I wanted instead. It understands the seven-point
+      scale and core points because I needed it to, and it keeps everything on
+      my own laptop because I'd rather my grades weren't sitting on someone
+      else's server.
+    </p>
+    <p>
+      I use it every day for my own coursework, which is the only reason it
+      keeps getting better. When something annoys me while I'm using it, it
+      usually gets fixed that week.
+    </p>
+  </div>
+</section>
+
 <!-- ───────────────────── everything it does ───────────────────── -->
-<section id="everything">
+<section class="band" id="everything">
   <div class="wrap">
     <div class="narrow" style="text-align:center">
       <p class="eyebrow">Every page</p>
-      <h2>Everything it does</h2>
+      <h2>Fifteen pages in all</h2>
       <p class="muted">
-        Fifteen pages, grouped the way they're grouped in the app's own sidebar.
-        Open any of them for what's actually in there.
+        Grouped the way they're grouped in the app's own sidebar.
       </p>
     </div>
 
-    <div class="cat-grid">
-      <div class="cat-side">
-      <div class="cat-col">
-        <p class="cat-group">Overview</p>
-
-        <details><summary>Dashboard</summary>
-          <p>Your whole workload in one screen: a live countdown to the exam session, what's due today, what's overdue, and what's coming. Task counts across the top, your XP level and study streak down the side, and progress against your weekly study goal.</p></details>
-
-        <details><summary>Timeline</summary>
-          <p>Every open task in one list, sorted by due date. Filter by category, priority or subject, then save the combination as a view you can jump back to — "HL only", "everything due this fortnight", whatever you actually use.</p></details>
-
-        <details><summary>Calendar</summary>
-          <p>A month at a time. Click any day to see what's due then, or switch to planned work to see the sessions you've scheduled rather than the deadlines. Subject colours carry through, so a heavy week is obvious before you're in it.</p></details>
+    <div class="pagelist">
+      <div>
+        <h3>Overview</h3>
+        <ul><li>Dashboard</li><li>Timeline</li><li>Calendar</li></ul>
       </div>
-      <div class="cat-col">
-        <p class="cat-group">IB</p>
-
-        <details><summary>Subjects</summary>
-          <p>Every subject as a card with its grade and how much is left. Open one for a grade ring against your target, hours studied, task progress, and any university offer conditions riding on that subject.</p></details>
-
-        <details><summary>Core Requirements</summary>
-          <p>TOK, the Extended Essay and CAS tracked separately from ordinary tasks, because the Diploma treats them separately. Progress on each, with the deadlines that come with them.</p></details>
-
-        <details><summary>Grades</summary>
-          <p>Current and target grade per subject on the seven-point scale, plus the TOK/EE core-points matrix. The diploma-target calculator shows your predicted total and — more usefully — which single subject would gain you the most points for the effort.</p></details>
-
-        <details><summary>University</summary>
-          <p>Applications with their deadlines, offer conditions broken down per subject, required HL totals shown as bars against what you're actually predicted, tuition, required materials, and linked tasks. Plus your own quick links to Common App, BridgeU or wherever you apply.</p></details>
+      <div>
+        <h3>IB</h3>
+        <ul><li>Subjects</li><li>Core Requirements</li><li>Grades</li><li>University</li></ul>
       </div>
+      <div>
+        <h3>Study</h3>
+        <ul><li>Study Session</li><li>Focus</li><li>Scheduler</li><li>Analytics</li><li>Coach</li></ul>
       </div>
-      <div class="cat-side">
-      <div class="cat-col">
-        <p class="cat-group">Study</p>
-
-        <details><summary>Study Session</summary>
-          <p>A focused timer with a queue. Line up what you're working through, start the clock, and it keeps running across a reload. Optional Pomodoro cycling with breaks. Everything you log feeds the analytics and your streak.</p></details>
-
-        <details><summary>Focus</summary>
-          <p>A stricter mode for when you actually need it. Set an allow-list of what you're permitting yourself, lock in, and it counts every time you leave. Today's priorities and today's plan sit alongside so you're not hunting for what's next.
-          <br><br><em>Being straight with you:</em> it locks this app and counts your leaves — it can't force-quit anything else on your Mac.</p></details>
-
-        <details><summary>Scheduler</summary>
-          <p>Drag a task onto a slot, or click the task then the slot. Auto-Schedule fits your open work around the hours you've said you have, respecting busy blocks for school, sport or anything repeating. Unscheduled tasks stay in a column beside it so nothing quietly disappears.</p></details>
-
-        <details><summary>Analytics</summary>
-          <p>Five charts: a thirty-day workload forecast against the hours you actually have, study time per day, where the time goes by subject, tasks finished per day, and estimated versus actual session length — that last one is how you find out your "one hour" IA sessions are really two.</p></details>
-
-        <details><summary>Coach</summary>
-          <p>Ask it what to do next. It reads your real tasks, deadlines and grades and answers from them, offline, with no key or internet needed. Add an OpenRouter API key and it becomes a full AI conversation instead.
-          <br><br>It never edits anything directly: every change arrives as a preview card you confirm or cancel.</p></details>
-      </div>
-      <div class="cat-col">
-        <p class="cat-group">Workspace</p>
-
-        <details><summary>Templates</summary>
-          <p>Reusable task structures. Build "IA write-up" once with its sub-tasks and deadlines, then create the whole thing in one click the next time — and the time after that.</p></details>
-
-        <details><summary>Notes</summary>
-          <p>Somewhere for what isn't a task: formulae, essay ideas, feedback from a teacher. Rich text with bold, italic, underline and lists, pinned notes, and search across everything. Saved on your computer like the rest of it.</p></details>
-
-        <details><summary>Settings</summary>
-          <p>Your subjects with their own emoji and colour, the hours you have free each day, your exam session date, weekly study goal, coach tone, light or dark, and everything to do with your data — export a backup, import one, or erase the lot.</p></details>
-      </div>
+      <div>
+        <h3>Workspace</h3>
+        <ul><li>Templates</li><li>Notes</li><li>Settings</li></ul>
       </div>
     </div>
   </div>
 </section>
+
 <!-- ───────────────────────── data ───────────────────────── -->
 <section id="data">
   <div class="wrap narrow" style="text-align:center">
@@ -474,13 +415,13 @@
       <h2>Pay for a block. Nothing renews.</h2>
       <p class="muted">
         A key unlocks editing. Buy a month to get through mocks, or buy it once
-        and forget about it — there's no subscription and no card kept on file.
+        and never think about it again. No subscription, no card kept on file.
       </p>
       <p class="note" style="text-align:left;margin-top:1.4rem">
         <strong>Not on sale yet.</strong> These are the prices it will launch at.
-        Until then the app is free to download and everything in it is readable,
-        searchable and exportable — adding your own work is what needs a key.
-        Leave your email and you'll hear once, when keys go on sale.
+        Until then the app is free to download and fully explorable, and adding
+        your own work is the only thing that needs a key. Leave your email and
+        you'll hear once, when keys go on sale.
       </p>
     </div>
 
@@ -511,7 +452,7 @@
     <div class="narrow" style="margin-top:3.4rem">
       <h3 style="font-size:1.15rem;margin-bottom:.2rem">The specifics</h3>
       <p class="small muted" style="margin-top:.2rem">
-        If someone else is paying for this, here's everything they'd reasonably want to know.
+        If a parent is paying for this, here's what they'll want to know.
       </p>
       <div style="text-align:center;margin-top:1.8rem">
       <a class="btn btn-lg" id="waitlist-btn" href="https://forms.gle/1g1ohwxmRNSVuDug8"
@@ -522,23 +463,55 @@
     <table class="specs">
         <tr><th>What you're buying</th><td>A licence key for one person, sold as a prepaid block of time. It unlocks editing in the app.</td></tr>
         <tr><th>Does it auto-renew?</th><td>No. Nothing renews, no card is stored, and no subscription is created. When a block runs out you choose whether to buy another.</td></tr>
-        <tr><th>What happens after it runs out</th><td>The app becomes read-only. Everything can still be read, searched, reported on and exported in full — no work is ever held hostage.</td></tr>
+        <tr><th>What happens after it runs out</th><td>The app becomes read-only. Everything can still be read, searched, reported on and exported in full, so no work is ever held hostage.</td></tr>
         <tr><th>Is an account needed?</th><td>No. There is no sign-up, no email verification and no login. The key is entered once in Settings.</td></tr>
         <tr><th>Where does the data live</th><td>Only on the Mac it was typed into. Nothing is uploaded, and there is no server to breach.</td></tr>
-        <tr><th>Requirements</th><td>A Mac with Apple silicon — an M1 or newer — running a recent macOS. Roughly 250&nbsp;MB of disk space. It won't run on an older Intel Mac.</td></tr>
+        <tr><th>Requirements</th><td>A Mac with Apple silicon, meaning an M1 or newer, running a recent macOS. Roughly 250&nbsp;MB of disk space. It won't run on an older Intel Mac.</td></tr>
         <tr><th>Updates</th><td>Included for the life of the app, not tied to the licence block.</td></tr>
       </table>
     </div>
   </div>
 </section>
 
+<!-- ─────────────────── first launch ─────────────────── -->
+<section id="firstrun">
+  <div class="wrap narrow">
+    <p class="eyebrow">After you download</p>
+    <h2>Opening it the first time</h2>
+    <p class="muted">
+      macOS will refuse to open it and say Apple &ldquo;cannot check it for
+      malicious software&rdquo;. That means the app hasn't been through Apple's
+      paid notarisation service. Here's the way through, and you only do it once.
+    </p>
+
+    <ol class="steps">
+      <li><strong>Drag IB Tracker to Applications, then double-click it.</strong>
+          It'll be blocked. That's expected, and it's the step that makes the
+          next one possible, so don't skip it.</li>
+      <li><strong>Open System Settings &rarr; Privacy &amp; Security.</strong></li>
+      <li><strong>Scroll to the bottom, to Security.</strong> You'll see
+          &ldquo;IB Tracker was blocked to protect your Mac&rdquo;. Click
+          <strong>Open Anyway</strong>.</li>
+      <li><strong>Confirm with Touch ID or your password</strong>, then click
+          <strong>Open</strong>.</li>
+    </ol>
+
+    <p class="small muted">
+      After that it opens normally, and updates install without asking again.
+      On macOS Sequoia and later, Control-clicking the app and choosing Open no
+      longer works, because Apple removed that shortcut. System Settings is the
+      only route.
+    </p>
+  </div>
+</section>
+
 <!-- ───────────────────────── faq ───────────────────────── -->
-<section>
+<section class="band">
   <div class="wrap narrow">
     <h2 style="text-align:center;margin-bottom:1.8rem">Questions</h2>
 
     <details><summary>Can I try it before paying?</summary>
-      <p>Yes. Download it and pick “try it with sample data” on the first screen — a realistic set of tasks, grades and study sessions you can click through completely. You can clear it any time in Settings.</p></details>
+      <p>Yes. Download it and pick “try it with sample data” on the first screen, which gives you a realistic set of tasks, grades and study sessions to click through. You can clear it any time in Settings.</p></details>
 
     <details><summary>What exactly stops working without a key?</summary>
       <p>Adding and changing things. Reading, searching, filtering, the analytics, progress reports and exporting all keep working. If a key runs out, nothing is deleted and you can still take everything with you.</p></details>
@@ -548,25 +521,22 @@
 
     <details><summary>Will it run on my Mac?</summary>
       <p>If it's an <strong>M1 or newer</strong>, yes. That's every Mac sold since about 2020, and every Mac sold new today.</p>
-      <p>Not sure? Open the Apple menu in the top-left corner of your screen and choose <strong>About This Mac</strong>. If the Chip line says M1, M2, M3, M4 or similar, you're fine. If it says Intel, this won't run — sorry.</p>
-      <p>It also needs one extra step the first time you open it, because it isn't distributed through the App Store — see <a href="#firstrun">opening it the first time</a>.</p></details>
-
-    <details><summary>macOS won't let me open it — what do I do?</summary>
-      <p>One extra step the first time, because the app isn't distributed through the App Store. The steps are in <a href="#firstrun">After you download</a>, above.</p></details>
+      <p>Not sure? Open the Apple menu in the top-left corner of your screen and choose <strong>About This Mac</strong>. If the Chip line says M1, M2, M3, M4 or similar, you're fine. If it says Intel, this won't run.</p>
+      <p>It also needs one extra step the first time you open it, because it isn't distributed through the App Store. The steps are in <a href="#firstrun">opening it the first time</a>.</p></details>
 
     <details><summary>Is the coach an AI? Does it send my data anywhere?</summary>
       <p>The built-in coach runs entirely on your machine and sends nothing. If you want full AI conversations you can add your own OpenRouter API key, and only then is your study data sent to OpenRouter when you chat. The key is stored locally and is never included in backups.</p></details>
 
     <details><summary>Can I move to a new laptop?</summary>
-      <p>Export a backup from Settings, install the app on the new Mac, and import it. Your licence key is not stored in the backup file, so keep the email it came in — enter it again in Settings.</p></details>
+      <p>Export a backup from Settings, install the app on the new Mac, and import it. Your licence key is not stored in the backup file, so keep the email it came in and enter it again in Settings.</p></details>
 
     <details><summary>What about Windows or iPad?</summary>
-      <p>Not yet — this is a Mac app today. The core also runs as a plain web page in any browser, but the Mac app is the supported way to use it.</p></details>
+      <p>Not yet, this is a Mac app today. The core also runs as a plain web page in any browser, but the Mac app is the supported way to use it.</p></details>
   </div>
 </section>
 
 <!-- ───────────────────────── closing cta ───────────────────────── -->
-<section class="band" style="text-align:center">
+<section style="text-align:center">
   <div class="wrap narrow">
     <h2>Start with the sample data</h2>
     <p class="muted">See the whole thing working before you decide anything.</p>
@@ -582,7 +552,7 @@
 
 <footer>
   <div class="wrap foot">
-    <span>IB Tracker — built for IB Diploma students.</span>
+    <span>IB Tracker, built for IB Diploma students.</span>
     <span>Not affiliated with or endorsed by the International Baccalaureate Organization.</span>
   </div>
 </footer>
@@ -591,8 +561,8 @@
   /* The first-launch instructions live in a <details> so they sit with the other
      FAQ answers, but browsers scroll to a linked <details> without opening it.
      Someone arriving from "how to open it" has just been blocked by macOS and
-     would land on a collapsed section — the worst possible moment to hide the
-     answer. Open it on click, and on load for a pasted #firstrun link. */
+     would land on a collapsed section, which is the worst possible moment to
+     hide the answer. Open it on click, and on load for a pasted #firstrun link. */
   function openLinkedDetails(id) {
     var el = id && document.getElementById(id);
     if (el && el.tagName === "DETAILS") { el.open = true; return el; }
@@ -605,8 +575,8 @@
     if (href.charAt(0) === "#") { openLinkedDetails(href.slice(1)); return; }
 
     /* Downloading is the moment people hit the Gatekeeper wall, and the steps
-       are useless if they have to go looking. The link is left alone — the
-       browser starts the .dmg on its own and does not navigate — and the page
+       are useless if they have to go looking. The link is left alone, since the
+       browser starts the .dmg on its own and does not navigate, and the page
        moves to the instructions underneath it. */
     if (href.indexOf("/releases/latest/download/") !== -1) {
       var target = document.getElementById("firstrun");
