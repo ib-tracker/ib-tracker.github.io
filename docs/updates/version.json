@@ -1,13 +1,15 @@
 {
-  "version": "1.2.4",
-  "released": "2026-08-08",
+  "version": "1.2.5",
+  "released": "2026-08-09",
   "notes": [
-    "IB Tracker now runs natively on Apple Silicon. Until now it was an Intel build running through Apple's Rosetta translation layer, which is why macOS had started warning that it \"includes a component that will not work with a future release of macOS\". That warning is gone, and the app is faster and lighter for it.",
-    "This download needs an Apple Silicon Mac — an M1 or newer. If you have an older Intel Mac, don't install it: stay on the version you have, which keeps working and keeps updating."
+    "IB Tracker now makes a sound when something goes right — a short chime as you tick off a task, a warmer one when you finish a study session, and a little fanfare when you level up.",
+    "Study streaks are celebrated too: reach 3, 7, 14, 30 days and up, and you'll hear about it.",
+    "If a timer or a pomodoro break ends while you're working in another app, you now get a desktop notification, so you can look away from the tracker without missing the end of a block.",
+    "All of it can be switched off in Settings → Sound & notifications."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.4.zip",
-    "sha256": "204bb4ae7eb21064b6c0ce9170b0a29f67b7b87b129acabd293f75462b2a8042",
-    "size": 207604
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.5.zip",
+    "sha256": "c3161ce2a00242e1b17218def437ffbcbae8903b8950e9340fba79689bd437bb",
+    "size": 211308
   }
 }
