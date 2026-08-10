@@ -1,15 +1,16 @@
 {
-  "version": "1.2.5",
-  "released": "2026-08-09",
+  "version": "1.3.0",
+  "released": "2026-08-10",
   "notes": [
-    "IB Tracker now makes a sound when something goes right — a short chime as you tick off a task, a warmer one when you finish a study session, and a little fanfare when you level up.",
-    "Study streaks are celebrated too: reach 3, 7, 14, 30 days and up, and you'll hear about it.",
-    "If a timer or a pomodoro break ends while you're working in another app, you now get a desktop notification, so you can look away from the tracker without missing the end of a block.",
-    "All of it can be switched off in Settings → Sound & notifications."
+    "IB Tracker now gives you 7 days of the complete app, free, from the first time you open it. No card, no account, nothing to cancel. When the week is up the app keeps everything you've added and stays readable, searchable and exportable for as long as you like, and a licence key is what lets you carry on adding to it.",
+    "Opening the app for the first time now starts with a short setup: your subjects, your exam session date, and how many hours you actually have on a school day and at the weekend. Everything else in the app works properly once those are in.",
+    "The tour is a lot shorter, and now waits until after setup so the pages it shows you have something in them. Each page also introduces itself the first time you open it, so there's less to remember up front.",
+    "The Dashboard has a small getting-started checklist that ticks itself off as you go, and disappears once you're done with it.",
+    "Settings is no longer one long scroll. Every section is collapsed by default and shows its current value on the right, so you can find what you came for without reading the whole page."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.2.5.zip",
-    "sha256": "c3161ce2a00242e1b17218def437ffbcbae8903b8950e9340fba79689bd437bb",
-    "size": 211308
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.3.0.zip",
+    "sha256": "fac739fa0d50d1011cbd7d8fd816a9126ff5ce4106cc6203b9dfe632c41d460f",
+    "size": 222084
   }
 }
