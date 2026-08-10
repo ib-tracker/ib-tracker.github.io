@@ -1,16 +1,12 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "released": "2026-08-10",
   "notes": [
-    "IB Tracker now gives you 7 days of the complete app, free, from the first time you open it. No card, no account, nothing to cancel. When the week is up the app keeps everything you've added and stays readable, searchable and exportable for as long as you like, and a licence key is what lets you carry on adding to it.",
-    "Opening the app for the first time now starts with a short setup: your subjects, your exam session date, and how many hours you actually have on a school day and at the weekend. Everything else in the app works properly once those are in.",
-    "The tour is a lot shorter, and now waits until after setup so the pages it shows you have something in them. Each page also introduces itself the first time you open it, so there's less to remember up front.",
-    "The Dashboard has a small getting-started checklist that ticks itself off as you go, and disappears once you're done with it.",
-    "Settings is no longer one long scroll. Every section is collapsed by default and shows its current value on the right, so you can find what you came for without reading the whole page."
+    "Fixes the last step of the tour, which highlighted an empty patch of screen instead of what it was talking about. The tour's final note is now shown in the middle of the screen, and any step that needs to scroll to reach what it's pointing at now lands on it properly."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.3.0.zip",
-    "sha256": "fac739fa0d50d1011cbd7d8fd816a9126ff5ce4106cc6203b9dfe632c41d460f",
-    "size": 222084
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.3.1.zip",
+    "sha256": "9a67086bb18fbf51731c0d00830b87f6737b7db5de0c8268e0f8602d93450aa4",
+    "size": 222432
   }
 }
