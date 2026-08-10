@@ -134,6 +134,22 @@
   .price .per{font-size:.82rem;color:var(--ink-3)}
   .price .btn{margin-top:1rem;width:100%;font-size:.88rem;padding:.5rem .5rem}
 
+  /* The trial, stated as a shape rather than a sentence: what you get, then
+     the fork at the end of it. Both branches are shown because "read-only
+     forever, free" is the half people don't expect and the reason the trial
+     isn't a trap. */
+  .trial-strip{
+    display:flex; align-items:center; justify-content:center; gap:1.6rem; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--hairline); border-radius:14px;
+    padding:1.2rem 1.4rem; margin-top:1.8rem; text-align:left;
+  }
+  .trial-strip > div{display:flex; flex-direction:column; gap:.1rem}
+  .ts-num{font-size:2.1rem; font-weight:750; letter-spacing:-.03em; line-height:1; color:var(--accent)}
+  .ts-lab{font-size:.86rem; color:var(--ink-3)}
+  .ts-opt{font-size:.98rem; font-weight:650; color:var(--ink)}
+  .ts-arrow{font-size:1.3rem; color:var(--ink-3)}
+  @media (max-width:560px){ .trial-strip{gap:.9rem} .ts-arrow{display:none} }
+
   table.specs{width:100%;border-collapse:collapse;margin-top:1.2rem;font-size:.94rem}
   table.specs th,table.specs td{text-align:left;padding:.6rem .2rem;border-bottom:1px solid var(--hairline);vertical-align:top}
   table.specs th{color:var(--ink-3);font-weight:600;width:12rem}
@@ -208,7 +224,7 @@
     <a class="btn btn-lg btn-ghost" href="#features">See what it does</a>
   </div>
   <p class="cta-note">
-    Free to download · M1 Macs and newer · No account, no sign-up, no internet needed
+    7 days free, no card · M1 Macs and newer · No account, no sign-up, no internet needed
   </p>
   <p class="cta-note">
     First launch takes one extra step, because the app isn't from the App Store.
@@ -224,10 +240,10 @@
 <!-- ───────────────── what the free version is, stated up front ───────────────── -->
 <div class="wrap narrow" style="margin-bottom:1rem">
   <div class="note">
-    <strong>Free to download, sample data included</strong>, so you can click
-    through the whole app first. Adding <em>your own</em>
-    work needs a licence key. Without one everything you've already put in stays
-    readable, searchable and exportable.
+    <strong>The first 7 days are free and complete.</strong> No card, no
+    account, nothing to cancel. After that a licence key keeps you editing, and
+    if you don't buy one everything you've already put in stays readable,
+    searchable and exportable.
   </div>
 </div>
 
@@ -421,16 +437,31 @@
   <div class="wrap">
     <div class="narrow" style="text-align:center">
       <p class="eyebrow">Pricing</p>
-      <h2>Pay for a block. Nothing renews.</h2>
+      <h2>Start free. Pay only if it sticks.</h2>
       <p class="muted">
-        A key unlocks editing. Buy a month to get through mocks, or buy it once
-        and never think about it again. No subscription, no card kept on file.
+        Every download gets 7 days of the whole app, with no card and no
+        account. If it's earned a place in your week by then, a key keeps you
+        editing. Nothing renews and no card is ever kept on file.
       </p>
+
+      <div class="trial-strip">
+        <div>
+          <span class="ts-num">7</span>
+          <span class="ts-lab">days, everything unlocked</span>
+        </div>
+        <div class="ts-arrow" aria-hidden="true">&rarr;</div>
+        <div>
+          <span class="ts-lab">then either</span>
+          <span class="ts-opt">buy a block below</span>
+          <span class="ts-lab">or keep it read-only, free, forever</span>
+        </div>
+      </div>
+
       <p class="note" style="text-align:left;margin-top:1.4rem">
-        <strong>Not on sale yet.</strong> These are the prices it will launch at.
-        Until then the app is free to download and fully explorable, and adding
-        your own work is the only thing that needs a key. Leave your email and
-        you'll hear once, when keys go on sale.
+        <strong>Keys aren't on sale yet.</strong> These are the prices it will
+        launch at. The 7-day trial works right now, and when it ends the app
+        stays readable, searchable and exportable for as long as you want.
+        Leave your email and you'll hear once, when keys go on sale.
       </p>
     </div>
 
@@ -454,7 +485,7 @@
     </div>
 
     <p class="small muted" style="text-align:center;margin-top:1.3rem">
-      Checkout isn't live yet. The app and its sample data are fully explorable in the meantime.
+      Checkout isn't live yet. The trial is, so you can use the whole thing today.
     </p>
 
     <!-- the specifics, for whoever is actually paying -->
@@ -470,9 +501,10 @@
     </div>
 
     <table class="specs">
+        <tr><th>Before you pay anything</th><td>7 days of the complete app on every download. No card, no account, nothing to cancel, and no reminder emails.</td></tr>
         <tr><th>What you're buying</th><td>A licence key for one person, sold as a prepaid block of time. It unlocks editing in the app.</td></tr>
         <tr><th>Does it auto-renew?</th><td>No. Nothing renews, no card is stored, and no subscription is created. When a block runs out you choose whether to buy another.</td></tr>
-        <tr><th>What happens after it runs out</th><td>The app becomes read-only. Everything can still be read, searched, reported on and exported in full, so no work is ever held hostage.</td></tr>
+        <tr><th>What happens after the trial, or after a block runs out</th><td>The app becomes read-only. Everything can still be read, searched, reported on and exported in full, so no work is ever held hostage.</td></tr>
         <tr><th>Is an account needed?</th><td>No. There is no sign-up, no email verification and no login. The key is entered once in Settings.</td></tr>
         <tr><th>Where does the data live</th><td>Only on the Mac it was typed into. Nothing is uploaded, and there is no server to breach.</td></tr>
         <tr><th>Requirements</th><td>A Mac with Apple silicon, meaning an M1 or newer, running a recent macOS. Roughly 250&nbsp;MB of disk space. It won't run on an older Intel Mac.</td></tr>
@@ -520,10 +552,11 @@
     <h2 style="text-align:center;margin-bottom:1.8rem">Questions</h2>
 
     <details><summary>Can I try it before paying?</summary>
-      <p>Yes. Download it and pick “try it with sample data” on the first screen, which gives you a realistic set of tasks, grades and study sessions to click through. You can clear it any time in Settings.</p></details>
+      <p>The first 7 days are the whole app, with nothing held back and no card asked for. Setup takes a minute: it asks for your subjects, your exam date and how much time you actually have, and you're in.</p>
+      <p>There's no reminder email and nothing to cancel, because there's no account and no card. When the 7 days are up the app simply stops accepting new entries.</p></details>
 
-    <details><summary>What exactly stops working without a key?</summary>
-      <p>Adding and changing things. Reading, searching, filtering, the analytics, progress reports and exporting all keep working. If a key runs out, nothing is deleted and you can still take everything with you.</p></details>
+    <details><summary>What exactly stops working when the trial ends?</summary>
+      <p>Adding and changing things. Reading, searching, filtering, the analytics, progress reports and exporting all keep working, for as long as you want and at no cost. Nothing is deleted and you can take everything with you whenever you like.</p></details>
 
     <details><summary>Does it work offline?</summary>
       <p>Completely. There is no server. The only network request the app ever makes is a once-a-day version check, and that can be turned off in Settings.</p></details>
