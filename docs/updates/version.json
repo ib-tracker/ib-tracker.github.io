@@ -1,12 +1,18 @@
 {
-  "version": "1.3.1",
-  "released": "2026-08-10",
+  "version": "1.4.0",
+  "released": "2026-08-15",
   "notes": [
-    "Fixes the last step of the tour, which highlighted an empty patch of screen instead of what it was talking about. The tour's final note is now shown in the middle of the screen, and any step that needs to scroll to reach what it's pointing at now lands on it properly."
+    "The coach can finally add tasks properly. Say something like \"add a task called Spanish homework, medium priority, 3 hours\" and it works, picking up the subject, priority, how long it'll take and any due date from the same sentence. Before this it would quietly answer a different question instead, which was worse than admitting it hadn't understood.",
+    "You can rename a subject now, in Settings. The new name follows it everywhere: your tasks, study sessions, grades, templates, saved filters and university offer conditions all come with it.",
+    "Dependencies are gone. A predecessor already said the same thing more simply, and having two ways to say \"do this first\" only made the task form harder to read. If a task was waiting on a dependency it can now be started straight away; predecessors are unchanged.",
+    "University tasks belong to a course. Pick University as the category and you'll choose which course it's for instead of a subject, and it shows up on that course's card.",
+    "You can change the checklist that new university courses start with, in Settings, rather than deleting the same items every time.",
+    "When your trial ends the buttons you can no longer use are properly greyed out, with a note explaining why. Before, you could fill in a whole task and only find out it wouldn't save after pressing the button.",
+    "Also: empty pages now offer the obvious next step, the Timeline's saved filters explain what they save, the University trend tracks your predicted total out of 45 instead of an average, and setup suggests a subject from each IB group rather than \"Physics\" six times over."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.3.1.zip",
-    "sha256": "9a67086bb18fbf51731c0d00830b87f6737b7db5de0c8268e0f8602d93450aa4",
-    "size": 222432
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.4.0.zip",
+    "sha256": "3c1efa9b851c11cd9834605673ca5703cb34ac23612e0aeb129fdbdd183bc4d0",
+    "size": 229538
   }
 }
