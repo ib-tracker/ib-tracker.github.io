@@ -1,13 +1,14 @@
 {
-  "version": "1.4.1",
+  "version": "1.4.2",
   "released": "2026-08-15",
   "notes": [
-    "The application tracker on each university course can now be edited. Add your own steps, remove ones that don't apply, and set what a new course starts with in Settings. A UK application doesn't need a portfolio deadline and a US one doesn't need an interview to prepare for, so the built-in seven were never going to suit everyone.",
-    "Finishing something started in the last update: when your trial ends, the boxes you can no longer type in are greyed out too, not just the buttons. Renaming a subject and only discovering on the way out that it wouldn't save was the last version of a problem that should be gone."
+    "Fixes the buttons on empty pages, which were showing an oversized, washed-out plus sign bigger than the button holding it. That affected every empty page in the app, so the Dashboard, Core Requirements, Grades, University, Templates, Notes and Timeline all look right now.",
+    "The Core Requirements page is tidier when you haven't added anything yet: one compact line per section instead of three large boxes, and the buttons read \"Add TOK task\" rather than the longer, and in one case ungrammatical, versions.",
+    "The coach now tells you when you have asked for something it can't do. Ask it to rename or archive a task and it says so, and lists what it can actually do, instead of quietly answering a different question about that subject."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.4.1.zip",
-    "sha256": "047468b9e1ba04afda42e03abcbb4c1391d0b1e6b118d37222837d984111d905",
-    "size": 230523
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.4.2.zip",
+    "sha256": "eafb37cd1f006c331e147f5af3696c91ac11f4823427301f0e4321c8698fcb44",
+    "size": 231501
   }
 }
