@@ -1,18 +1,13 @@
 {
-  "version": "1.4.0",
+  "version": "1.4.1",
   "released": "2026-08-15",
   "notes": [
-    "The coach can finally add tasks properly. Say something like \"add a task called Spanish homework, medium priority, 3 hours\" and it works, picking up the subject, priority, how long it'll take and any due date from the same sentence. Before this it would quietly answer a different question instead, which was worse than admitting it hadn't understood.",
-    "You can rename a subject now, in Settings. The new name follows it everywhere: your tasks, study sessions, grades, templates, saved filters and university offer conditions all come with it.",
-    "Dependencies are gone. A predecessor already said the same thing more simply, and having two ways to say \"do this first\" only made the task form harder to read. If a task was waiting on a dependency it can now be started straight away; predecessors are unchanged.",
-    "University tasks belong to a course. Pick University as the category and you'll choose which course it's for instead of a subject, and it shows up on that course's card.",
-    "You can change the checklist that new university courses start with, in Settings, rather than deleting the same items every time.",
-    "When your trial ends the buttons you can no longer use are properly greyed out, with a note explaining why. Before, you could fill in a whole task and only find out it wouldn't save after pressing the button.",
-    "Also: empty pages now offer the obvious next step, the Timeline's saved filters explain what they save, the University trend tracks your predicted total out of 45 instead of an average, and setup suggests a subject from each IB group rather than \"Physics\" six times over."
+    "The application tracker on each university course can now be edited. Add your own steps, remove ones that don't apply, and set what a new course starts with in Settings. A UK application doesn't need a portfolio deadline and a US one doesn't need an interview to prepare for, so the built-in seven were never going to suit everyone.",
+    "Finishing something started in the last update: when your trial ends, the boxes you can no longer type in are greyed out too, not just the buttons. Renaming a subject and only discovering on the way out that it wouldn't save was the last version of a problem that should be gone."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.4.0.zip",
-    "sha256": "3c1efa9b851c11cd9834605673ca5703cb34ac23612e0aeb129fdbdd183bc4d0",
-    "size": 229538
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.4.1.zip",
+    "sha256": "047468b9e1ba04afda42e03abcbb4c1391d0b1e6b118d37222837d984111d905",
+    "size": 230523
   }
 }
