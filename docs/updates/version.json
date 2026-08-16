@@ -1,14 +1,14 @@
 {
-  "version": "1.4.2",
-  "released": "2026-08-15",
+  "version": "1.5.0",
+  "released": "2026-08-16",
   "notes": [
-    "Fixes the buttons on empty pages, which were showing an oversized, washed-out plus sign bigger than the button holding it. That affected every empty page in the app, so the Dashboard, Core Requirements, Grades, University, Templates, Notes and Timeline all look right now.",
-    "The Core Requirements page is tidier when you haven't added anything yet: one compact line per section instead of three large boxes, and the buttons read \"Add TOK task\" rather than the longer, and in one case ungrammatical, versions.",
-    "The coach now tells you when you have asked for something it can't do. Ask it to rename or archive a task and it says so, and lists what it can actually do, instead of quietly answering a different question about that subject."
+    "IB Tracker now runs in a browser, so you no longer need a Mac to use it. Open it at ib-tracker.github.io/app, and it works on a Windows laptop, a Chromebook, a school computer, anything. Nothing to download and nothing to install.",
+    "The browser version comes with 30 days free rather than 7, because trying something properly takes more than a week when you are in the middle of term. The Mac app keeps its 7-day trial, still runs completely offline, and a license key works on both.",
+    "Your work is still yours either way. In a browser it is stored by that browser and never sent to a server, exactly as the Mac app stores it on your Mac."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.4.2.zip",
-    "sha256": "eafb37cd1f006c331e147f5af3696c91ac11f4823427301f0e4321c8698fcb44",
-    "size": 231501
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.0.zip",
+    "sha256": "9e609fdc1bf1014db0301c85b2408b77cafe63a0fd66a542277f64280d4e36f8",
+    "size": 231785
   }
 }
