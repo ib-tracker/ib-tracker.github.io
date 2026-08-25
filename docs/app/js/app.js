@@ -28,6 +28,10 @@
     // saveGrade/deleteGrade, so the series tracks when grades changed rather
     // than when the app happened to be opened.
     try { App.backfillSubjectLevels(); } catch (e) { console.error(e); }
+    // A clock left running overnight would otherwise resume as if no time had
+    // passed and offer to log the whole night. Guarded like the backfill above:
+    // a failure here must not cost a boot.
+    try { App.timer.dropAbandoned(); } catch (e) { console.error(e); }
     App.renderNow();
 
     // Tell the desktop shell this build booted cleanly (it rolls a bad update

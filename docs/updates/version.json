@@ -1,15 +1,13 @@
 {
-  "version": "1.5.1",
+  "version": "1.5.2",
   "released": "2026-08-25",
   "notes": [
-    "Fixes tasks disappearing from the Scheduler. If you planned a task for a day and then moved its due date, or simply did not get to it that day, the task vanished: it was still pinned to the old day, so it did not show in the week you were looking at, did not come back to the Unscheduled list, and Auto-Schedule ignored it. Those tasks now return to Unscheduled and can be scheduled again. What you originally planned is kept, so past weeks still show what you meant to do.",
-    "Fixes the Study Session queue. Finishing a task anywhere other than the session itself left it sitting in the queue looking unfinished, with no way to clear it. The queue now reflects whether a task is actually done, and every task in it has a remove button.",
-    "A task timer and a study session could run at the same time, each counting the same minutes and each logging them separately. Only one can run now, and the other tells you why.",
-    "New: any running task timer can go full screen. Start one from the Dashboard or a task, press the full-screen button, and you get just the task, the clock and how long is left. Escape brings you back."
+    "Fixes a timer left running overnight. If you started a timer or a study session and never stopped it, the app carried on counting while it was closed, so the next morning it was still running with the whole night on the clock. Pressing Stop then logged a fourteen-hour study session, which quietly wrecked your weekly goal and your charts.",
+    "A clock left running for more than eight hours is now discarded when you next open the app, and you are told it happened. Nothing is logged, because there is no honest way to know how long you actually worked. Sessions that just run late, including ones that cross midnight, are left alone, and pausing still holds your time indefinitely."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.1.zip",
-    "sha256": "d143a16f6f4a62f6ae945c72ae7e733ab17cbc5d9795241a608b906ac42ba2ad",
-    "size": 234593
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.2.zip",
+    "sha256": "e1494d314cb049227f98683def42e79495598d6e45524cf06b531dcf05406c93",
+    "size": 235517
   }
 }

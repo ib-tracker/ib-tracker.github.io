@@ -14,6 +14,48 @@
     return Math.max(0, Math.floor((t.pausedAccumSec || 0) + run));
   };
 
+  /* ---------- abandoned clocks -------------------------------------------
+     Both clocks store an absolute startEpoch and nothing ever revisited it, so
+     a timer left running overnight was still "running" the next morning with
+     the whole night on it. Pressing Stop then banked a fourteen-hour study
+     session, and logged minutes are not cosmetic: they drive XP, the streak,
+     the weekly goal and every chart in Analytics.
+
+     The fix is to refuse to guess. There is no way to know how long the person
+     actually worked, so nothing is logged, the abandoned clock is dropped, and
+     they are told plainly rather than left to discover a bad number later.
+
+     The test is elapsed time, not "started on an earlier day": beginning at
+     11pm and stopping at 1am is a real session that happens to cross midnight.
+     A paused clock is left alone, because pausing freezes elapsed — someone
+     who paused at thirty minutes and came back a week later still has thirty
+     honest minutes waiting. */
+  const STALE_AFTER_HOURS = 8;
+
+  T.dropAbandoned = function () {
+    const s = App.state();
+    const dropped = [];
+
+    const isStale = (clock) => clock && (T.elapsedSec(clock) / 3600) >= STALE_AFTER_HOURS;
+    const hours = (clock) => Math.round(T.elapsedSec(clock) / 3600);
+
+    const staleTimer = isStale(s.timer);
+    const staleSession = isStale(s.studySession);
+    if (staleTimer) dropped.push(`task timer (${hours(s.timer)}h)`);
+    if (staleSession) dropped.push(`study session (${hours(s.studySession)}h)`);
+    if (!dropped.length) return false;
+
+    // system: whoever left it running may well be out of trial by now, and a
+    // clock that cannot be cleared would keep offering to log a bogus session.
+    App.update((st) => {
+      if (staleTimer) st.timer = null;
+      if (staleSession) st.studySession = null;
+    }, { silent: true, system: true });
+
+    App.toast(`Discarded a ${dropped.join(" and ")} left running. No study time was logged.`, "error");
+    return true;
+  };
+
   /* ---------- full screen ------------------------------------------------
      The same timer, larger. Deliberately not a third timer: it reads the same
      state.timer the floating widget does, so there is one clock, one elapsed

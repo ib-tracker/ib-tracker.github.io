@@ -16,7 +16,7 @@
    See packaging/RELEASING.md. */
 (function () {
   window.APP_BUILD = {
-    version: "1.5.1",
+    version: "1.5.2",
 
     // Served by GitHub Pages out of the ib-tracker/ib-tracker.github.io repo.
     // The repo is named after the org, which makes it an ORG ROOT SITE: it is
