@@ -35,7 +35,7 @@
   }
 
   function unscheduledTasks() {
-    return App.sortedTasks().filter((t) => !t.completed && !(t.scheduled_blocks || []).length);
+    return App.sortedTasks().filter((t) => App.needsScheduling(t));
   }
 
   function capacityStats(dates) {
@@ -577,7 +577,7 @@
       const ratio = available > 0 ? scheduled / available : 0;
       const capColor = ratio < 0.8 ? "var(--good)" : ratio < 1 ? "var(--warning)" : "var(--danger)";
       const unsched = unscheduledTasks();
-      const anyScheduled = App.state().tasks.some((t) => !App.isArchived(t) && (t.scheduled_blocks || []).length);
+      const anyScheduled = App.state().tasks.some((t) => !App.isArchived(t) && App.liveBlocks(t).length);
       const label = viewMode === "week"
         ? `${D.fmtShort(weekStart)} – ${D.fmtShort(D.addDays(weekStart, 6))}`
         : D.fmtMonthYear(monthAnchor);

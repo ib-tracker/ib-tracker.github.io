@@ -1,14 +1,15 @@
 {
-  "version": "1.5.0",
-  "released": "2026-08-16",
+  "version": "1.5.1",
+  "released": "2026-08-25",
   "notes": [
-    "IB Tracker now runs in a browser, so you no longer need a Mac to use it. Open it at ib-tracker.github.io/app, and it works on a Windows laptop, a Chromebook, a school computer, anything. Nothing to download and nothing to install.",
-    "The browser version comes with 30 days free rather than 7, because trying something properly takes more than a week when you are in the middle of term. The Mac app keeps its 7-day trial, still runs completely offline, and a license key works on both.",
-    "Your work is still yours either way. In a browser it is stored by that browser and never sent to a server, exactly as the Mac app stores it on your Mac."
+    "Fixes tasks disappearing from the Scheduler. If you planned a task for a day and then moved its due date, or simply did not get to it that day, the task vanished: it was still pinned to the old day, so it did not show in the week you were looking at, did not come back to the Unscheduled list, and Auto-Schedule ignored it. Those tasks now return to Unscheduled and can be scheduled again. What you originally planned is kept, so past weeks still show what you meant to do.",
+    "Fixes the Study Session queue. Finishing a task anywhere other than the session itself left it sitting in the queue looking unfinished, with no way to clear it. The queue now reflects whether a task is actually done, and every task in it has a remove button.",
+    "A task timer and a study session could run at the same time, each counting the same minutes and each logging them separately. Only one can run now, and the other tells you why.",
+    "New: any running task timer can go full screen. Start one from the Dashboard or a task, press the full-screen button, and you get just the task, the clock and how long is left. Escape brings you back."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.0.zip",
-    "sha256": "9e609fdc1bf1014db0301c85b2408b77cafe63a0fd66a542277f64280d4e36f8",
-    "size": 231785
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.1.zip",
+    "sha256": "d143a16f6f4a62f6ae945c72ae7e733ab17cbc5d9795241a608b906ac42ba2ad",
+    "size": 234593
   }
 }

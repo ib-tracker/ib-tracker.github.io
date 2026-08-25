@@ -14,11 +14,37 @@
     return Math.max(0, Math.floor((t.pausedAccumSec || 0) + run));
   };
 
+  /* ---------- full screen ------------------------------------------------
+     The same timer, larger. Deliberately not a third timer: it reads the same
+     state.timer the floating widget does, so there is one clock, one elapsed
+     count and one place to stop it.
+
+     Kept in a module variable rather than the store, so a reload never leaves
+     you stuck in a full-screen view you cannot remember opening. */
+  let fullscreen = false;
+  T.isFullscreen = () => fullscreen && !!App.state().timer;
+  T.setFullscreen = function (on) {
+    fullscreen = !!on && !!App.state().timer;
+    TU.renderFloating();
+  };
+
+  // Escape is what everyone tries first.
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && T.isFullscreen()) T.setFullscreen(false);
+  });
+
   /* ---------- floating single-task timer ---------- */
   T.active = () => App.state().timer;
 
   T.start = function (taskId, taskTitle, estimatedMinutes) {
     if (App.state().timer) { App.toast("A timer is already running", "error"); return; }
+    // Two independent clocks could run at once — this one and a Study Session —
+    // each counting the same minutes and each logging its own session at the
+    // end, so the time was banked twice and two clocks sat on screen.
+    if (App.state().studySession) {
+      App.toast("A study session is already running — stop that first", "error");
+      return;
+    }
     App.update((s) => {
       s.timer = {
         taskId: taskId || "", taskTitle: taskTitle || "Study Session",
@@ -89,6 +115,33 @@
     const estSec = (t.estimatedMinutes || 0) * 60;
     const overtime = estSec > 0 && elapsed > estSec;
 
+    if (fullscreen) {
+      const display = estSec > 0 && !overtime ? App.fmtClock(estSec - elapsed) : App.fmtClock(elapsed);
+      const pct = estSec > 0 ? App.clamp((elapsed / estSec) * 100, 0, 100) : 0;
+      root.innerHTML = `
+        <div class="ftimer-full ${overtime ? "overtime" : ""}" role="dialog" aria-label="Timer">
+          <button class="icon-btn ftimer-exit" data-ft-exit title="Exit full screen (Esc)" aria-label="Exit full screen">${App.icon("minimize")}</button>
+          <div class="ff-task">${esc(t.taskTitle || "Study Session")}</div>
+          <div class="ff-clock" data-ft-time>${overtime ? "+" : ""}${display}</div>
+          <div class="ff-sub">${overtime ? "over your estimate" : estSec > 0 ? `of ${App.fmtMinutes(t.estimatedMinutes)}` : "elapsed"}</div>
+          ${estSec > 0 ? `<div class="ff-bar"><span data-ft-bar style="width:${pct}%"></span></div>` : ""}
+          <div class="ff-controls">
+            ${t.paused
+              ? `<button class="btn btn-primary btn-lg" data-ft-resume>${App.icon("play")} Resume</button>`
+              : `<button class="btn btn-outline btn-lg" data-ft-pause>${App.icon("pause")} Pause</button>`}
+            <button class="btn btn-outline btn-lg" data-ft-stop>${App.icon("square")} Stop</button>
+            ${t.taskId ? `<button class="btn btn-good btn-lg" data-ft-finish>${App.icon("check")} Finish</button>` : ""}
+          </div>
+        </div>`;
+      const qf = (sel) => root.querySelector(sel);
+      qf("[data-ft-exit]").addEventListener("click", () => T.setFullscreen(false));
+      if (qf("[data-ft-pause]")) qf("[data-ft-pause]").addEventListener("click", () => T.pause());
+      if (qf("[data-ft-resume]")) qf("[data-ft-resume]").addEventListener("click", () => T.resume());
+      if (qf("[data-ft-stop]")) qf("[data-ft-stop]").addEventListener("click", () => { T.setFullscreen(false); T.stop(false); });
+      if (qf("[data-ft-finish]")) qf("[data-ft-finish]").addEventListener("click", () => { T.setFullscreen(false); T.stop(true); });
+      return;
+    }
+
     if (t.minimized) {
       root.innerHTML = `
         <button class="ftimer-mini ${overtime ? "overtime" : ""}" data-ft-expand title="Open timer">
@@ -104,6 +157,7 @@
       <div class="ftimer-panel">
         <div class="ftimer-title">
           <span class="name">${esc(t.taskTitle || "Study Session")}</span>
+          <button class="icon-btn" data-ft-full title="Full screen">${App.icon("target")}</button>
           <button class="icon-btn" data-ft-min title="Minimize">${App.icon("minimize")}</button>
         </div>
         <div class="ftimer-time ${overtime ? "overtime" : ""}" data-ft-timewrap>
@@ -123,6 +177,7 @@
 
     const q = (sel) => root.querySelector(sel);
     if (q("[data-ft-min]")) q("[data-ft-min]").addEventListener("click", () => T.toggleMinimize());
+    if (q("[data-ft-full]")) q("[data-ft-full]").addEventListener("click", () => T.setFullscreen(true));
     if (q("[data-ft-pause]")) q("[data-ft-pause]").addEventListener("click", () => T.pause());
     if (q("[data-ft-resume]")) q("[data-ft-resume]").addEventListener("click", () => T.resume());
     if (q("[data-ft-stop]")) q("[data-ft-stop]").addEventListener("click", () => T.stop(false));
@@ -152,6 +207,9 @@
           const display = estSec > 0 && !overtime ? App.fmtClock(estSec - elapsed) : App.fmtClock(elapsed);
           node.textContent = (overtime ? "+" : "") + display;
         }
+        // The full-screen view has a progress bar the small one doesn't.
+        const bar = document.querySelector("#floating-timer [data-ft-bar]");
+        if (bar && estSec > 0) bar.style.width = App.clamp((elapsed / estSec) * 100, 0, 100) + "%";
       }
     } else {
       lastOvertime = null;

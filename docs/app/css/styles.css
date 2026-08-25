@@ -1649,3 +1649,46 @@ details[open] > .set-head .set-chev { transform: rotate(90deg); }
 }
 .subj-name-input:hover { border-color: var(--hairline-2); background: var(--surface); }
 .subj-name-input:focus { border-color: var(--accent); background: var(--surface); }
+
+/* Remove-from-queue. Hidden until the row is hovered or focused within, so a
+   running session reads as a list of work rather than a row of delete buttons. */
+.queue-row .q-remove { opacity: 0; transition: opacity .15s ease; margin-left: auto; }
+.queue-row:hover .q-remove,
+.queue-row:focus-within .q-remove { opacity: .75; }
+.queue-row .q-remove:hover { opacity: 1; }
+@media (hover: none) { .queue-row .q-remove { opacity: .6; } }
+
+/* ---------- full-screen timer ----------
+   The floating timer, enlarged. Fixed to the viewport rather than to its
+   container so it covers the app whatever page you were on. */
+.ftimer-full {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 32px;
+  background: var(--page); color: var(--ink);
+  animation: ff-in .18s ease-out;
+}
+@keyframes ff-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ftimer-full { animation: none; } }
+.ftimer-full .ftimer-exit { position: absolute; top: 18px; right: 18px; }
+.ff-task {
+  font-size: 15px; color: var(--ink-2); font-weight: 600;
+  max-width: 32ch; text-align: center; margin-bottom: 4px;
+}
+/* tabular-nums so the digits don't jitter as the seconds tick */
+.ff-clock {
+  font-size: clamp(72px, 18vw, 190px); font-weight: 750; line-height: 1;
+  letter-spacing: -0.04em; font-variant-numeric: tabular-nums;
+}
+.ftimer-full.overtime .ff-clock { color: var(--danger-ink); }
+.ff-sub { font-size: 13px; color: var(--ink-3); margin-top: 6px; }
+.ff-bar {
+  width: min(420px, 70vw); height: 5px; border-radius: 99px;
+  background: var(--surface-3); margin-top: 22px; overflow: hidden;
+}
+.ff-bar span {
+  display: block; height: 100%; background: var(--accent);
+  transition: width 1s linear;
+}
+.ftimer-full.overtime .ff-bar span { background: var(--danger-ink); }
+.ff-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 34px; }

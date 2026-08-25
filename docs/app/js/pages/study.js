@@ -75,6 +75,12 @@
   }
 
   function start() {
+    // The mirror of the guard in timer.js: only one clock at a time, or the
+    // same minutes get counted and logged twice.
+    if (App.state().timer) {
+      App.toast("A task timer is already running — stop it first", "error");
+      return;
+    }
     const usePomo = pomoOn();
     const focusLen = usePomo ? pomoFocus() : duration;
     if (focusLen < 1) return;
@@ -140,6 +146,30 @@
       s2.taskStartEpoch = Date.now();
       s2.taskPausedAccumSec = 0;
     });
+  }
+
+  /* Take a task out of a running session.
+
+     Needed because the queue is fixed at start: finish something from its card
+     or ask the coach to complete it and it stays in the list with no way out,
+     which is exactly the state that made a finished task look unfinished.
+
+     `completed` is a push-array kept parallel to the queue by position, so a
+     removal has to splice both, and currentIndex shifts only when the removed
+     row sat behind it. */
+  function removeFromQueue(i) {
+    App.update((s) => {
+      const ss = s.studySession;
+      if (!ss || i < 0 || i >= ss.queueIds.length) return;
+      ss.queueIds.splice(i, 1);
+      if (i < ss.completed.length) ss.completed.splice(i, 1);
+      if (i < ss.currentIndex) ss.currentIndex -= 1;
+      ss.currentIndex = Math.min(ss.currentIndex, ss.queueIds.length);
+      // The task being timed just left, so its clock restarts on whatever is
+      // now current rather than carrying someone else's elapsed time.
+      if (i === ss.currentIndex) { ss.taskStartEpoch = Date.now(); ss.taskPausedAccumSec = 0; }
+    });
+    App.toast("Taken out of this session");
   }
 
   function stopAndLog() {
@@ -366,10 +396,15 @@
                   <span style="color:var(--good)">${App.icon("checkCircle")}</span>
                   <p style="font-weight:650;margin-top:4px">All queued tasks completed!</p>
                 </div>` : ""}
+              ${/* "Done" is the task's real state, not its position in the
+                    queue. It used to be `i < currentIndex`, so finishing a
+                    task any other way — from its card, the Dashboard, the
+                    coach — left it sitting here looking untouched, with no way
+                    to clear it. */""}
               ${ss.queueIds.map((id, i) => {
                 const t = App.taskById(id);
                 const title = t ? t.title : "(deleted task)";
-                const done = i < ss.currentIndex;
+                const done = i < ss.currentIndex || !!(t && t.completed);
                 const current = i === ss.currentIndex && !allDone;
                 return `
                   <div class="queue-row ${done ? "done" : ""} ${current ? "current" : ""}">
@@ -377,6 +412,8 @@
                     <span class="q-title">${esc(title)}</span>
                     ${current ? `<span class="chip chip-accent">current</span>` : ""}
                     ${done && ss.completed[i] ? `<span class="q-meta">${App.fmtClock(ss.completed[i].elapsed)}</span>` : ""}
+                    <button class="icon-btn danger q-remove" data-ss-remove="${i}"
+                            title="Take out of this session" aria-label="Remove ${esc(title)} from the queue">${App.icon("x")}</button>
                   </div>`;
               }).join("")}
             </div>` : ""}
@@ -440,6 +477,8 @@
       on("[data-ss-skip-break]", skipBreak);
       on("[data-ss-stop]", stopAndLog);
       on("[data-ss-complete]", completeCurrentTask);
+      el.querySelectorAll("[data-ss-remove]").forEach((b) =>
+        b.addEventListener("click", (e) => { e.stopPropagation(); removeFromQueue(Number(b.dataset.ssRemove)); }));
       on("[data-ss-reset]", async () => {
         const ok = await UI.confirm({
           title: "Reset session?",

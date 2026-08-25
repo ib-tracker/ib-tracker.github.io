@@ -584,6 +584,39 @@
   };
 
   /* ---------- scheduling ---------- */
+  /* ---------- stale schedule blocks ------------------------------------
+     A block records "I planned to do this then". It is pinned to an absolute
+     date and nothing ever revisits it, so it silently stops describing a plan
+     you could still follow: the day passes, or the due date moves, and the
+     block is left behind.
+
+     That mattered more than it sounds. A task with a leftover block counted as
+     scheduled, so it vanished from the Unscheduled column AND from
+     autoSchedule (which only ever considered tasks with no blocks at all),
+     while being invisible in the week you were actually looking at. Changing a
+     due date was one way in; simply not doing the thing on the day you planned
+     was the commoner one.
+
+     Stale blocks are kept rather than deleted, so past weeks stay an honest
+     record of what you intended. They just stop counting as a plan. */
+  App.isBlockStale = function (task, blk, today) {
+    if (task.completed) return false;                 // history, not a plan
+    today = today || D.today();
+    if (blk.date < today) return true;                // the day has gone
+    return !!(task.due_date && blk.date > task.due_date); // planned past the deadline
+  };
+
+  // The blocks that still represent work you could do.
+  App.liveBlocks = function (task, today) {
+    today = today || D.today();
+    return (task.scheduled_blocks || []).filter((b) => !App.isBlockStale(task, b, today));
+  };
+
+  // The one question the scheduler actually wants answered.
+  App.needsScheduling = function (task, today) {
+    return !task.completed && App.liveBlocks(task, today).length === 0;
+  };
+
   App.scheduledBlocksOn = function (dateStr) {
     const out = [];
     for (const t of App.state().tasks) {
@@ -648,8 +681,10 @@
         if (blk) { blk.date = dateStr; blk.start_min = attempt; blk.duration = duration; }
         else task.scheduled_blocks.push({ id: App.uid(), date: dateStr, start_min: attempt, duration });
       } else {
-        // manual placement replaces any prior schedule for this task
-        task.scheduled_blocks = [{ id: App.uid(), date: dateStr, start_min: attempt, duration }];
+        // Manual placement replaces the live plan but leaves stale blocks be,
+        // so dropping a task onto a new day does not erase last week's record.
+        const kept = task.scheduled_blocks.filter((b) => App.isBlockStale(task, b));
+        task.scheduled_blocks = kept.concat([{ id: App.uid(), date: dateStr, start_min: attempt, duration }]);
       }
       task.updated_at = now();
     });
@@ -695,7 +730,7 @@
 
     const taskMap = App.taskMap();
     const incomplete = s.tasks.filter((t) => !t.completed);
-    const unscheduled = incomplete.filter((t) => !(t.scheduled_blocks || []).length);
+    const unscheduled = incomplete.filter((t) => App.needsScheduling(t));
 
     const priRank = { critical: 0, high: 1, medium: 2, low: 3 };
     unscheduled.sort((a, b) => {
@@ -717,7 +752,7 @@
       if (t && t.predecessor_id && taskMap.has(t.predecessor_id)) visit(t.predecessor_id);
       visiting.delete(id);
       visited.add(id);
-      if (t && !t.completed && !(t.scheduled_blocks || []).length) sorted.push(t);
+      if (t && App.needsScheduling(t)) sorted.push(t);
     }
     unscheduled.forEach((t) => visit(t.id));
 
@@ -811,7 +846,12 @@
       App.update((st2) => {
         for (const r of results) {
           const t = st2.tasks.find((x) => x.id === r.taskId);
-          if (t) { t.scheduled_blocks = r.blocks; t.updated_at = now(); }
+          if (t) {
+            // Keep what is already history; replace only the live plan.
+            const kept = (t.scheduled_blocks || []).filter((b) => App.isBlockStale(t, b));
+            t.scheduled_blocks = kept.concat(r.blocks);
+            t.updated_at = now();
+          }
         }
       });
     }
