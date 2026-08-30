@@ -1,13 +1,13 @@
 {
-  "version": "1.5.2",
-  "released": "2026-08-25",
+  "version": "1.5.3",
+  "released": "2026-08-30",
   "notes": [
-    "Fixes a timer left running overnight. If you started a timer or a study session and never stopped it, the app carried on counting while it was closed, so the next morning it was still running with the whole night on the clock. Pressing Stop then logged a fourteen-hour study session, which quietly wrecked your weekly goal and your charts.",
-    "A clock left running for more than eight hours is now discarded when you next open the app, and you are told it happened. Nothing is logged, because there is no honest way to know how long you actually worked. Sessions that just run late, including ones that cross midnight, are left alone, and pausing still holds your time indefinitely."
+    "Sub-tasks are visible without opening the task. Any task with steps now shows a count you can click to unfold them right there in the list, with a checkbox on each one, so you can tick things off as you go instead of opening the task every time. Ticking a step updates the task's progress straight away, and the list stays folded by default so a long Timeline is still readable.",
+    "You can also add sub-tasks while creating a task, rather than having to save it, reopen it and edit it. If you start from a template, its steps and any you type yourself both come through."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.2.zip",
-    "sha256": "e1494d314cb049227f98683def42e79495598d6e45524cf06b531dcf05406c93",
-    "size": 235517
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.3.zip",
+    "sha256": "f83788c6d10f7ffd871d027f327520b8ed52c0f796e008671f621104f5043b17",
+    "size": 236899
   }
 }

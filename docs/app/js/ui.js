@@ -42,6 +42,9 @@
     "[data-mat-add-btn]", "[data-mat-remove]", "[data-mat-reset]",
     "[data-step-add-btn]", "[data-step-remove]", "[data-step-reset]",
     "[data-mat-add]", "[data-mat-del]", "[data-step-add]", "[data-step-del]",
+    // Ticking a sub-task from a card is a write. Expanding one is not, so
+    // [data-tact="subs"] is deliberately absent.
+    "[data-subtoggle]",
   ].join(",");
 
   /* Fields, not just buttons. Disabling the buttons alone still left forty

@@ -8,6 +8,12 @@
   const D = App.dates;
   const TK = (App.taskui = {});
 
+  /* Which cards have their sub-tasks open. Module-level rather than in the
+     store: it is a view preference, not data, and every tick re-renders the
+     whole list, so it has to survive a render without being persisted to a
+     backup or synced anywhere. */
+  const expandedSubs = new Set();
+
   /* ---------- task card ---------- */
   TK.taskCardHTML = function (task, opts) {
     opts = opts || {};
@@ -15,6 +21,7 @@
     const locked = App.isLocked(task, taskMap);
     const subs = App.subtasksOf(task.id);
     const subsDone = subs.filter((s) => s.completed).length;
+    const subsOpen = subs.length > 0 && expandedSubs.has(task.id);
     const timerActive = !!App.state().timer;
 
     return `
@@ -46,8 +53,23 @@
             ${task.recurring && task.recurring !== "none" ? `<span class="chip chip-plain">${App.icon("repeat")} ${esc(App.RECURRENCE[task.recurring])}</span>` : ""}
             ${UI.dueChip(task)}
             ${task.estimated_minutes > 0 ? `<span class="t-mins">${App.fmtMinutes(task.estimated_minutes)}</span>` : ""}
-            ${subs.length ? `<span class="t-subprog">${App.icon("checkCircle")} ${subsDone}/${subs.length}</span>` : ""}
+            ${subs.length ? `
+              <button class="t-subprog" data-tact="subs" aria-expanded="${subsOpen}"
+                      title="${subsOpen ? "Hide" : "Show"} sub-tasks">
+                ${App.icon("checkCircle")} ${subsDone}/${subs.length}
+                <span class="tsp-chev ${subsOpen ? "open" : ""}">${App.icon("chevD")}</span>
+              </button>` : ""}
           </div>
+          ${subsOpen ? `
+            <div class="t-subs">
+              ${subs.map((st) => `
+                <div class="t-sub ${st.completed ? "done" : ""}">
+                  <button class="task-check ${st.completed ? "checked" : ""}" data-subtoggle="${esc(st.id)}"
+                          aria-label="${st.completed ? "Mark incomplete" : "Mark complete"}: ${esc(st.title)}">${App.icon("check")}</button>
+                  <span class="t-sub-title">${esc(st.title)}</span>
+                  ${st.estimated_minutes ? `<span class="t-mins">${App.fmtMinutes(st.estimated_minutes)}</span>` : ""}
+                </div>`).join("")}
+            </div>` : ""}
         </div>
       </div>`;
   };
@@ -56,6 +78,14 @@
   TK.bindTaskList = function (container, opts) {
     opts = opts || {};
     container.addEventListener("click", async (e) => {
+      // Sub-task checkboxes first: they sit inside the card, so the [data-tact]
+      // lookup below would otherwise walk past them to the card's own buttons.
+      const subBtn = e.target.closest("[data-subtoggle]");
+      if (subBtn) {
+        e.stopPropagation();
+        App.toggleSubtask(subBtn.dataset.subtoggle);
+        return;
+      }
       const btn = e.target.closest("[data-tact]");
       if (!btn) return;
       const card = btn.closest("[data-task-id]");
@@ -71,6 +101,10 @@
         const beforeLevel = App.xp.compute().level;
         const completed = App.toggleTask(id);
         if (completed) { App.confetti(); App.xp.checkLevelUp(beforeLevel); }
+      } else if (act === "subs") {
+        // Expanding is a read, so it stays available in read-only mode.
+        if (expandedSubs.has(id)) expandedSubs.delete(id); else expandedSubs.add(id);
+        App.render();
       } else if (act === "edit") {
         TK.openTaskModal(task);
       } else if (act === "delete") {
@@ -113,6 +147,67 @@
           <button class="btn btn-outline btn-sm" data-st-add>${App.icon("plus")}</button>
         </div>
       </div>`;
+  }
+
+  /* Sub-tasks for a task that does not exist yet.
+
+     App.createSubtask needs a task_id to attach to, and a task being created
+     has no id until it is saved. So these are held in the form and created
+     immediately afterwards. Until now the whole section was simply hidden on
+     create, which meant saving, reopening and editing just to break a task
+     into steps. */
+  let draftSubs = [];
+
+  function draftSubtaskEditorHTML() {
+    const totalMin = draftSubs.reduce((n, x) => n + (x.estimated_minutes || 0), 0);
+    return `
+      <div data-draft-subtasks>
+        ${draftSubs.length ? `
+          <div class="row between mb-2" style="font-size:11.5px;color:var(--ink-3)">
+            <span>${draftSubs.length} step${draftSubs.length === 1 ? "" : "s"}</span>
+            ${totalMin ? `<span>total ${App.fmtMinutes(totalMin)}</span>` : ""}
+          </div>` : ""}
+        <div>
+          ${draftSubs.map((st, i) => `
+            <div class="subtask-row">
+              <span class="st-title" style="flex:1">${esc(st.title)}</span>
+              ${st.estimated_minutes ? `<span class="t-mins">${App.fmtMinutes(st.estimated_minutes)}</span>` : ""}
+              <button class="icon-btn danger" data-draft-del="${i}" title="Remove" type="button">${App.icon("x")}</button>
+            </div>`).join("")}
+        </div>
+        <div class="subtask-add">
+          <input class="input input-sm" data-draft-new placeholder="Add a sub-task…" style="flex:1">
+          <input class="input input-sm" data-draft-min type="number" min="0" placeholder="min" style="width:64px">
+          <button class="btn btn-outline btn-sm" data-draft-add type="button">${App.icon("plus")}</button>
+        </div>
+      </div>`;
+  }
+
+  function bindDraftSubtasks(rootEl) {
+    const wrap = rootEl.querySelector("[data-draft-subtasks]");
+    if (!wrap) return;
+    const refresh = () => {
+      const holder = wrap.parentElement;
+      holder.innerHTML = draftSubtaskEditorHTML();
+      bindDraftSubtasks(rootEl);
+    };
+    const titleEl = wrap.querySelector("[data-draft-new]");
+    const minEl = wrap.querySelector("[data-draft-min]");
+    const add = () => {
+      const title = titleEl.value.trim();
+      if (!title) return;
+      draftSubs.push({ title, estimated_minutes: parseInt(minEl.value) || 0 });
+      refresh();
+      const next = rootEl.querySelector("[data-draft-new]");
+      if (next) next.focus();
+    };
+    wrap.querySelector("[data-draft-add]").addEventListener("click", add);
+    titleEl.addEventListener("keydown", (e) => {
+      // Enter adds a step rather than submitting the half-filled task form.
+      if (e.key === "Enter") { e.preventDefault(); add(); }
+    });
+    wrap.querySelectorAll("[data-draft-del]").forEach((b) =>
+      b.addEventListener("click", () => { draftSubs.splice(Number(b.dataset.draftDel), 1); refresh(); }));
   }
 
   function bindSubtaskEditor(rootEl, taskId) {
@@ -166,6 +261,9 @@
   /* ---------- task create/edit modal ---------- */
   TK.openTaskModal = function (task, defaults) {
     const isEdit = !!task;
+    // Fresh every time the form opens, so steps typed into an abandoned task
+    // don't reappear on the next one.
+    draftSubs = [];
     const f = Object.assign({
       title: "", description: "", category: "subject_task", subject_name: "",
       university_course_id: "",
@@ -251,12 +349,11 @@
           <p class="hint" style="font-size:11.5px;color:var(--ink-3);margin:-6px 0 12px">A task with a predecessor is locked until the predecessor is completed; the auto-scheduler places it afterwards.</p>
         </div>
 
-        ${isEdit ? `
-          <hr class="divider">
-          <div class="field">
-            <label>Sub-tasks</label>
-            <div>${subtaskEditorHTML(task.id)}</div>
-          </div>` : ""}
+        <hr class="divider">
+        <div class="field">
+          <label>Sub-tasks</label>
+          <div>${isEdit ? subtaskEditorHTML(task.id) : draftSubtaskEditorHTML()}</div>
+        </div>
       </form>`;
 
     UI.openModal({
@@ -269,6 +366,7 @@
       onMount(el, handle) {
         const form = el.querySelector("[data-task-form]");
         if (isEdit) bindSubtaskEditor(el, task.id);
+        else bindDraftSubtasks(el);
 
         // "More options" disclosure for recurrence / predecessor
         const advToggle = form.querySelector("[data-adv-toggle]");
@@ -344,9 +442,12 @@
             if (tplId) {
               const tpl = App.state().templates.find((t) => t.id === tplId);
               const created = App.createTask(patch);
-              (tpl && tpl.sub_tasks || []).forEach((st, i) => App.createSubtask(created.id, st.title, st.estimated_minutes));
+              (tpl && tpl.sub_tasks || []).forEach((st) => App.createSubtask(created.id, st.title, st.estimated_minutes));
+              draftSubs.forEach((st) => App.createSubtask(created.id, st.title, st.estimated_minutes));
             } else {
-              App.createTask(patch);
+              const created = App.createTask(patch);
+              // Only now does a task_id exist to hang them on.
+              if (created) draftSubs.forEach((st) => App.createSubtask(created.id, st.title, st.estimated_minutes));
             }
             App.toast("Task created");
           }
