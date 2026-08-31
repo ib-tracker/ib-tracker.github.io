@@ -45,6 +45,10 @@
     // Ticking a sub-task from a card is a write. Expanding one is not, so
     // [data-tact="subs"] is deliberately absent.
     "[data-subtoggle]",
+    // Both ways out of a study-session task bank time and change a task, so
+    // they gate together: greying one and leaving the other live in the same
+    // button row would read as a broken screen rather than a locked one.
+    "[data-ss-complete]", "[data-ss-partial]",
   ].join(",");
 
   /* Fields, not just buttons. Disabling the buttons alone still left forty

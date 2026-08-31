@@ -121,32 +121,60 @@
     App.update((s) => { s.studySession = null; });
   }
 
-  function completeCurrentTask() {
+  /* Bank the time spent on the current task and move to the next one.
+
+     `finish` splits the two ways out of a task. Completing it is the old
+     behaviour. Not completing it is the new one: a three-hour IA is not
+     something you sit down and finish, and until now the only button here
+     closed the task, so the honest move — do forty-five minutes, keep the
+     task open — meant logging nothing at all.
+
+     Either way the elapsed time is logged the same, because the time was
+     worked either way. The session's `estimated_minutes` is what was left
+     when this sitting began, not the whole task: on a fresh task those are
+     the same number, and on a part-done one the sitting's target is the
+     remainder, which is what overtime should be measured against. */
+  function advanceCurrent(finish) {
     const ss = sess();
     if (!ss) return;
     const taskId = ss.queueIds[ss.currentIndex];
     const task = taskId && App.taskById(taskId);
     if (!task) return;
     const elapsed = taskElapsed(ss);
+    if (!finish && elapsed < 60) {
+      App.toast("Nothing to log yet — less than a minute on this one", "error");
+      return;
+    }
+    const target = App.taskMinutesLeft(task);
     const beforeLevel = App.xp.compute().level;
     App.logSession({
       task_id: task.id, task_title: task.title, subject_name: task.subject_name || "",
-      estimated_minutes: task.estimated_minutes || 0, overtime_minutes: 0,
+      estimated_minutes: target, overtime_minutes: 0,
       start_time: new Date(Date.now() - elapsed * 1000).toISOString(),
       end_time: new Date().toISOString(),
     });
-    if (!task.completed) App.toggleTask(task.id);
-    App.confetti();
+    if (finish) {
+      if (!task.completed) App.toggleTask(task.id);
+      App.confetti();
+    } else {
+      App.sfx("session");
+      App.toast(`${App.fmtMinutes(Math.round(elapsed / 60))} logged — “${task.title}” stays open`);
+    }
     App.xp.checkLevelUp(beforeLevel);
     App.update((s) => {
       const s2 = s.studySession;
       if (!s2) return;
-      s2.completed.push({ id: task.id, title: task.title, elapsed });
+      // Kept parallel to the queue by position, so a pass-over pushes a row
+      // too — with a flag, since the queue list must not tick it off.
+      s2.completed.push({ id: task.id, title: task.title, elapsed, partial: !finish });
       s2.currentIndex += 1;
       s2.taskStartEpoch = Date.now();
       s2.taskPausedAccumSec = 0;
     });
   }
+
+  function completeCurrentTask() { advanceCurrent(true); }
+  function logPartialAndMoveOn() { advanceCurrent(false); }
 
   /* Take a task out of a running session.
 
@@ -377,7 +405,11 @@
             <div class="card card-pad mb-4">
               <div class="row between mb-2">
                 <span class="card-title">Task queue</span>
-                <span class="muted small">${ss.completed.length}/${ss.queueIds.length} done</span>
+                ${/* Passed-over tasks are in `completed` to keep it aligned with
+                      the queue, so counting its length would call them done. */""}
+                <span class="muted small">${
+                  ss.completed.filter((c, i) => c && (!c.partial || (App.taskById(ss.queueIds[i]) || {}).completed)).length
+                }/${ss.queueIds.length} done</span>
               </div>
               ${currentTask && !allDone ? `
                 <div class="now-card mb-3">
@@ -385,16 +417,30 @@
                     <div style="flex:1;min-width:0">
                       <div class="now-label">Now working on</div>
                       <div class="now-title">${esc(currentTask.title)}</div>
-                      ${currentTask.estimated_minutes ? `<div class="muted small">est. ${App.fmtMinutes(currentTask.estimated_minutes)}</div>` : ""}
+                      ${currentTask.estimated_minutes ? `<div class="muted small">${
+                        App.taskMinutesLogged(currentTask.id) > 0
+                          ? `${App.fmtMinutes(App.taskMinutesLogged(currentTask.id))} done · ${App.fmtMinutes(App.taskMinutesLeft(currentTask))} left of ${App.fmtMinutes(currentTask.estimated_minutes)}`
+                          : `est. ${App.fmtMinutes(currentTask.estimated_minutes)}`
+                      }</div>` : ""}
                     </div>
                     <div class="now-elapsed" data-ss-task-elapsed>${App.fmtClock(taskElapsed(ss))}</div>
                   </div>
-                  <button class="btn btn-good btn-block mt-3" data-ss-complete>${App.icon("checkCircle")} Complete Task</button>
+                  <div class="row mt-3" style="gap:8px">
+                    <button class="btn btn-good" style="flex:1" data-ss-complete>${App.icon("checkCircle")} Complete Task</button>
+                    <button class="btn btn-outline" style="flex:1" data-ss-partial
+                            title="Log the time you have just done and move on, leaving this task open">${App.icon("clock")} Log &amp; move on</button>
+                  </div>
                 </div>` : ""}
               ${allDone ? `
                 <div style="text-align:center;padding:10px 0 14px">
                   <span style="color:var(--good)">${App.icon("checkCircle")}</span>
-                  <p style="font-weight:650;margin-top:4px">All queued tasks completed!</p>
+                  ${/* Calling a task you deliberately left open "completed"
+                        would undo the point of the button that left it open. */""}
+                  <p style="font-weight:650;margin-top:4px">${
+                    ss.completed.some((c, i) => c && c.partial && !(App.taskById(ss.queueIds[i]) || {}).completed)
+                      ? "Queue finished — time logged on everything."
+                      : "All queued tasks completed!"
+                  }</p>
                 </div>` : ""}
               ${/* "Done" is the task's real state, not its position in the
                     queue. It used to be `i < currentIndex`, so finishing a
@@ -404,14 +450,19 @@
               ${ss.queueIds.map((id, i) => {
                 const t = App.taskById(id);
                 const title = t ? t.title : "(deleted task)";
-                const done = i < ss.currentIndex || !!(t && t.completed);
+                const rec = ss.completed[i];
+                // Worked on but deliberately left open. It has moved out of the
+                // way like a finished one, but ticking it off would be a lie.
+                const partial = !!(rec && rec.partial) && !(t && t.completed);
+                const done = (i < ss.currentIndex || !!(t && t.completed)) && !partial;
                 const current = i === ss.currentIndex && !allDone;
                 return `
                   <div class="queue-row ${done ? "done" : ""} ${current ? "current" : ""}">
                     ${done ? `<span style="color:var(--good);display:flex">${App.icon("checkCircle")}</span>` : `<span style="color:var(--ink-3);display:flex">${App.icon("clock")}</span>`}
                     <span class="q-title">${esc(title)}</span>
                     ${current ? `<span class="chip chip-accent">current</span>` : ""}
-                    ${done && ss.completed[i] ? `<span class="q-meta">${App.fmtClock(ss.completed[i].elapsed)}</span>` : ""}
+                    ${partial ? `<span class="chip chip-plain">in progress</span>` : ""}
+                    ${(done || partial) && rec ? `<span class="q-meta">${App.fmtClock(rec.elapsed)}</span>` : ""}
                     <button class="icon-btn danger q-remove" data-ss-remove="${i}"
                             title="Take out of this session" aria-label="Remove ${esc(title)} from the queue">${App.icon("x")}</button>
                   </div>`;
@@ -477,6 +528,7 @@
       on("[data-ss-skip-break]", skipBreak);
       on("[data-ss-stop]", stopAndLog);
       on("[data-ss-complete]", completeCurrentTask);
+      on("[data-ss-partial]", logPartialAndMoveOn);
       el.querySelectorAll("[data-ss-remove]").forEach((b) =>
         b.addEventListener("click", (e) => { e.stopPropagation(); removeFromQueue(Number(b.dataset.ssRemove)); }));
       on("[data-ss-reset]", async () => {

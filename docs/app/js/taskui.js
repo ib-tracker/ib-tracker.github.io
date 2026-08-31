@@ -23,6 +23,15 @@
     const subsDone = subs.filter((s) => s.completed).length;
     const subsOpen = subs.length > 0 && expandedSubs.has(task.id);
     const timerActive = !!App.state().timer;
+    /* Time already worked. Stopping a timer without finishing has always
+       logged a session against the task; this is where that finally shows. */
+    const spent = App.taskMinutesLogged(task.id);
+    const timePct = App.taskTimeProgress(task);
+    /* The bar always means time, and the sub-task chip always means count, so
+       the two never state the same thing in different numbers. Skipping the
+       bar on tasks that happen to have sub-tasks was worse: two part-done
+       cards side by side, one with a bar and one without, reads as a bug. */
+    const showTimeBar = spent > 0 && timePct !== null && !task.completed;
 
     return `
       <div class="task-card ${task.completed ? "done" : ""} ${opts.selected ? "selected" : ""}" data-task-id="${esc(task.id)}">
@@ -52,7 +61,11 @@
             ${locked ? `<span class="chip chip-warning">${App.icon("lock")} Locked</span>` : ""}
             ${task.recurring && task.recurring !== "none" ? `<span class="chip chip-plain">${App.icon("repeat")} ${esc(App.RECURRENCE[task.recurring])}</span>` : ""}
             ${UI.dueChip(task)}
-            ${task.estimated_minutes > 0 ? `<span class="t-mins">${App.fmtMinutes(task.estimated_minutes)}</span>` : ""}
+            ${task.estimated_minutes > 0
+              ? `<span class="t-mins ${spent > 0 ? "spent" : ""}" ${spent > 0 ? `title="${App.fmtMinutes(spent)} worked of ${App.fmtMinutes(task.estimated_minutes)} estimated"` : ""}>${
+                  spent > 0 ? `${App.fmtMinutes(spent)} / ${App.fmtMinutes(task.estimated_minutes)}` : App.fmtMinutes(task.estimated_minutes)
+                }</span>`
+              : spent > 0 ? `<span class="t-mins spent" title="Time logged against this task">${App.fmtMinutes(spent)} done</span>` : ""}
             ${subs.length ? `
               <button class="t-subprog" data-tact="subs" aria-expanded="${subsOpen}"
                       title="${subsOpen ? "Hide" : "Show"} sub-tasks">
@@ -60,6 +73,8 @@
                 <span class="tsp-chev ${subsOpen ? "open" : ""}">${App.icon("chevD")}</span>
               </button>` : ""}
           </div>
+          ${showTimeBar ? `
+            <div class="progress thin t-timebar"><span class="${timePct >= 100 ? "good" : ""}" style="width:${timePct}%"></span></div>` : ""}
           ${subsOpen ? `
             <div class="t-subs">
               ${subs.map((st) => `
@@ -111,7 +126,9 @@
         const ok = await UI.confirm({ title: "Delete task?", message: `“${task.title}” and its sub-tasks will be permanently deleted.` });
         if (ok) { App.deleteTask(id); App.toast("Task deleted"); }
       } else if (act === "timer") {
-        App.timer.start(task.id, task.title, task.estimated_minutes || 0);
+        // Aim at what is left, not the whole task: a second sitting on a
+        // three-hour essay is not a three-hour sitting.
+        App.timer.start(task.id, task.title, App.taskMinutesLeft(task));
       } else if (act === "select" && opts.onSelect) {
         opts.onSelect(id);
       }

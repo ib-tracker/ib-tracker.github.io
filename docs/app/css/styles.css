@@ -402,6 +402,10 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .task-card:hover .t-actions, .task-card:focus-within .t-actions { opacity: 1; }
 .t-mins { font-size: 11px; color: var(--ink-3); font-weight: 500; }
 .t-subprog { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-3); }
+/* Once real time is on a task its "45m / 3h" is the number worth reading,
+   so it stops being the same grey as every other chip beside it. */
+.t-mins.spent { color: var(--ink-2); font-weight: 600; }
+.t-timebar { margin-top: 8px; }
 .task-list { display: flex; flex-direction: column; gap: 8px; }
 
 /* ---------- Progress ---------- */

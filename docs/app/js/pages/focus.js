@@ -165,7 +165,7 @@
     mount(el) {
       const startTask = (id) => {
         const t = App.taskById(id);
-        if (t) T.start(t.id, t.title, t.estimated_minutes || 0);
+        if (t) T.start(t.id, t.title, App.taskMinutesLeft(t));
       };
       el.querySelectorAll("[data-f-start]").forEach((b) =>
         b.addEventListener("click", () => startTask(b.dataset.fStart)));

@@ -1,13 +1,14 @@
 {
-  "version": "1.5.3",
-  "released": "2026-08-30",
+  "version": "1.6.0",
+  "released": "2026-08-31",
   "notes": [
-    "Sub-tasks are visible without opening the task. Any task with steps now shows a count you can click to unfold them right there in the list, with a checkbox on each one, so you can tick things off as you go instead of opening the task every time. Ticking a step updates the task's progress straight away, and the list stays folded by default so a long Timeline is still readable.",
-    "You can also add sub-tasks while creating a task, rather than having to save it, reopen it and edit it. If you start from a template, its steps and any you type yourself both come through."
+    "Long tasks can be worked on in pieces. Time you log against a task now counts towards it, so a 3-hour IA you have done 45 minutes of shows \"45m / 3h\" with a progress bar, instead of looking untouched until the day you finish it.",
+    "The scheduler plans only what is left. Once you have done 45 minutes of that 3-hour task it books 2h 15m of future slots, not another 3 hours, so your week gets lighter as you actually work. Passing the estimate never makes a task disappear from the plan, and never closes it — an estimate is a guess, and you decide when something is finished.",
+    "Study Session has a second way out of a task: \"Log & move on\" banks the time you have just done and moves to the next one, leaving the task open. Until now the only button there completed the task, so doing forty-five honest minutes on an essay meant either lying about finishing it or logging nothing at all."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.5.3.zip",
-    "sha256": "f83788c6d10f7ffd871d027f327520b8ed52c0f796e008671f621104f5043b17",
-    "size": 236899
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.0.zip",
+    "sha256": "aa702729aff25c21e2346335f0179bfeb6b0890bd702be61dd77914a014aff66",
+    "size": 239896
   }
 }

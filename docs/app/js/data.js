@@ -448,6 +448,74 @@
     return isNaN(ms) ? 0 : Math.max(0, Math.round(ms / 60000));
   };
 
+  /* ---------- time logged against a task ---------- */
+
+  /* Sessions have always carried a task_id; until now nothing read them back
+     per task, so a task you were half-way through looked untouched. Both of
+     the functions below sit on top of this map.
+
+     Memoised because a task card asks for this on every render and the sum
+     walks every session ever logged. The key is the sessions array's identity
+     plus its length, which covers every mutation path the app has: logging
+     pushes (same array, new length), deleting filters into a fresh array, and
+     restoring a backup replaces the array outright. Nothing edits a session's
+     task_id or times in place. */
+  let mbtMap = null, mbtArr = null, mbtLen = -1;
+  function minutesByTask() {
+    const arr = App.state().sessions;
+    if (mbtMap && arr === mbtArr && arr.length === mbtLen) return mbtMap;
+    const map = Object.create(null);
+    for (const sess of arr) {
+      if (!sess.task_id) continue;
+      map[sess.task_id] = (map[sess.task_id] || 0) + App.sessionMinutes(sess);
+    }
+    mbtMap = map; mbtArr = arr; mbtLen = arr.length;
+    return map;
+  }
+
+  // Minutes actually worked on a task, across every session logged against it.
+  App.taskMinutesLogged = function (taskId) {
+    return minutesByTask()[taskId] || 0;
+  };
+
+  /* How much of a task is done, by time. Only meaningful when there is an
+     estimate to measure against, so it returns null rather than 0 when there
+     is nothing to divide by — the difference between "not started" and "not
+     measurable", which the card needs to tell apart.
+
+     Capped at 100: overrunning an estimate is normal and a bar past full
+     reads as a bug. */
+  App.taskTimeProgress = function (task) {
+    const est = task.estimated_minutes || 0;
+    if (!est) return null;
+    return Math.min(100, Math.round((App.taskMinutesLogged(task.id) / est) * 100));
+  };
+
+  /* What is left of a task's estimate for a *sitting* to aim at. Unlike the
+     planning figure this has no floor and no default, because zero here means
+     "no target left", which is exactly how an untimed task already behaves. */
+  App.taskMinutesLeft = function (task) {
+    const est = task.estimated_minutes || 0;
+    return est ? Math.max(0, est - App.taskMinutesLogged(task.id)) : 0;
+  };
+
+  /* What is left to plan for a task. Logged time comes off the estimate so a
+     task you are part-way through stops claiming a full-size slot, and the
+     week gets lighter as you actually work.
+
+     Floored rather than allowed to reach zero. Passing the estimate does not
+     finish the work — estimates are guesses — and a task needing zero minutes
+     would be handed no blocks at all and quietly vanish from the plan, which
+     is the opposite of what someone grinding through a long task needs. An
+     untouched task returns its estimate unchanged, so nothing about existing
+     plans shifts until real time is logged. */
+  const MIN_PLAN_MINUTES = 15;
+  App.taskPlanMinutes = function (task) {
+    const est = task.estimated_minutes || 30;
+    const done = App.taskMinutesLogged(task.id);
+    return done > 0 ? Math.max(est - done, MIN_PLAN_MINUTES) : est;
+  };
+
   // total focused minutes logged in the current week (Monday-start)
   App.weekMinutes = function () {
     const weekStart = D.mondayOf(D.today());
@@ -658,7 +726,7 @@
     const t = App.taskById(taskId);
     if (!t) return { ok: false, reason: "Task not found" };
     const st = App.state().settings;
-    const duration = opts.duration || t.estimated_minutes || 30;
+    const duration = opts.duration || App.taskPlanMinutes(t);
     const dayEnd = (st.work_end_hour || 22) * 60;
     const occupied = occupiedIntervals(dateStr, taskId, opts.moveBlockId);
 
@@ -780,7 +848,8 @@
         }
       }
 
-      const totalDur = task.estimated_minutes || 30;
+      // Only what is left: time already logged is not planned again.
+      const totalDur = App.taskPlanMinutes(task);
       const maxSession = task.max_session_minutes || maxSessionGlobal;
       const chunks = [];
       let remaining = totalDur;
@@ -1626,26 +1695,31 @@
       [1, 19, 55, "Math AA HL", "Paper 1 practice set (calculus)", 60],
       [1, 20, 35, "Physics HL", "Waves & optics problem set", 30],
       [2, 18, 95, "Economics HL", "EE — research session", 90],
-      [3, 19, 45, "Math AA HL", "Math IA — modelling", 60],
+      [3, 19, 45, "Math AA HL", "Math IA — modelling", 60, "Math IA — final draft"],
       [4, 17, 70, "English A SL", "Paper 2 essay plan", 60],
       [5, 19, 30, "Spanish B SL", "Vocab review", 30],
-      [6, 18, 85, "Physics HL", "Physics IA — data processing", 90],
+      [6, 18, 85, "Physics HL", "Physics IA — data processing", 90, "Physics IA — error analysis section"],
       [7, 20, 40, "Chemistry SL", "Organic chemistry flashcards", 45],
       [8, 19, 65, "Math AA HL", "Past paper — calculus", 60],
       [9, 18, 50, "Economics HL", "Macro notes", 45],
-      [11, 19, 75, "Math AA HL", "Math IA — outline", 90],
+      [11, 19, 75, "Math AA HL", "Math IA — outline", 90, "Math IA — outline & data collection"],
       [12, 17, 60, "TOK", "TOK essay outline", 60],
       [13, 19, 45, "English A SL", "Poetry annotations", 40],
-      [14, 18, 90, "Economics HL", "EE reading", 90],
+      [14, 18, 90, "Economics HL", "EE reading", 90, "EE — complete first draft"],
       [16, 19, 55, "Physics HL", "Kinematics review", 60],
       [17, 20, 35, "Spanish B SL", "Oral practice", 30],
       [19, 18, 80, "Math AA HL", "Problem set", 75],
       [20, 19, 50, "Chemistry SL", "Stoichiometry worksheet", 45],
     ];
-    for (const [daysAgo, hour, dur, subj, title, est] of sessSpec) {
+    /* The optional 7th field names a sample task this sitting counts towards.
+       Without it every sample task looked untouched, so the one thing the
+       sample data could not show was the ordinary case: a long task you have
+       started and not finished. */
+    for (const [daysAgo, hour, dur, subj, title, est, linkTo] of sessSpec) {
       const [start_time, end_time] = iso(daysAgo, hour, dur);
+      const linked = linkTo ? data.tasks.find((x) => x.title === linkTo) : null;
       data.sessions.push({
-        id: App.uid(), task_id: "", task_title: title, subject_name: subj === "TOK" ? "" : subj,
+        id: App.uid(), task_id: linked ? linked.id : "", task_title: title, subject_name: subj === "TOK" ? "" : subj,
         estimated_minutes: est, overtime_minutes: Math.max(0, dur - est),
         start_time, end_time, created_at: start_time,
       });
