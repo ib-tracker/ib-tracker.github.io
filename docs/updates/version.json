@@ -1,14 +1,14 @@
 {
-  "version": "1.6.0",
+  "version": "1.6.1",
   "released": "2026-08-31",
   "notes": [
-    "Long tasks can be worked on in pieces. Time you log against a task now counts towards it, so a 3-hour IA you have done 45 minutes of shows \"45m / 3h\" with a progress bar, instead of looking untouched until the day you finish it.",
-    "The scheduler plans only what is left. Once you have done 45 minutes of that 3-hour task it books 2h 15m of future slots, not another 3 hours, so your week gets lighter as you actually work. Passing the estimate never makes a task disappear from the plan, and never closes it — an estimate is a guess, and you decide when something is finished.",
-    "Study Session has a second way out of a task: \"Log & move on\" banks the time you have just done and moves to the next one, leaving the task open. Until now the only button there completed the task, so doing forty-five honest minutes on an essay meant either lying about finishing it or logging nothing at all."
+    "The scheduler no longer plans work for after a task is due. It never checked the due date at all — it walked the week looking for any free gap — so a task due Tuesday could be given a Saturday slot and the run would still report success. Now nothing is placed past its deadline, and anything already overdue keeps getting the earliest slot going.",
+    "Deadlines now decide the order, with priority breaking ties between things due the same day. Priority used to come first, which is how a critical task due in three weeks took the slots in front of an ordinary one due tomorrow.",
+    "When a task genuinely cannot fit before its deadline, it books what it can and tells you what is left over, instead of scheduling nothing at all. Two of three hours planned beats an empty calendar, and you find out you are short while there is still time to move something."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.0.zip",
-    "sha256": "aa702729aff25c21e2346335f0179bfeb6b0890bd702be61dd77914a014aff66",
-    "size": 239896
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.1.zip",
+    "sha256": "15c53b8fa541f69e8fd3cba7c1e2c3605e1c773d4e10b3a6ee23397d45250dee",
+    "size": 240693
   }
 }

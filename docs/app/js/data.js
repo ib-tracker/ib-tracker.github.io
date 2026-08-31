@@ -800,14 +800,24 @@
     const incomplete = s.tasks.filter((t) => !t.completed);
     const unscheduled = incomplete.filter((t) => App.needsScheduling(t));
 
+    /* Deadline first, priority only between things due the same day.
+
+       Priority used to lead, with the due date breaking ties inside a priority
+       band. That is how a critical task due in three weeks took the slots in
+       front of an ordinary one due tomorrow: "critical" beat "medium" before
+       either date was looked at, the early days filled with far-off work, and
+       the urgent task was left whatever was going spare. Importance is a good
+       tiebreaker and a bad first sort key, because a deadline is a fact and a
+       priority is an opinion. */
     const priRank = { critical: 0, high: 1, medium: 2, low: 3 };
     unscheduled.sort((a, b) => {
-      const pa = priRank[a.priority] ?? 2, pb = priRank[b.priority] ?? 2;
-      if (pa !== pb) return pa - pb;
-      if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
-      if (a.due_date) return -1;
-      if (b.due_date) return 1;
-      return 0;
+      const da = a.due_date || "", db = b.due_date || "";
+      if (da !== db) {
+        if (!da) return 1;   // undated work waits for everything with a date
+        if (!db) return -1;
+        return da.localeCompare(db);
+      }
+      return (priRank[a.priority] ?? 2) - (priRank[b.priority] ?? 2);
     });
 
     // Topological sort so predecessors come first
@@ -848,6 +858,16 @@
         }
       }
 
+      /* Never plan work for after the day it is due. There was no check of
+         any kind here: placement walked the whole week hunting for a gap, so a
+         task due Tuesday would quietly take a Saturday slot and the run would
+         report success.
+
+         Anything already overdue is exempt. Its deadline is in the past, so
+         the test could never pass and the task would drop out of the plan
+         altogether — overdue work needs the earliest slot going, not none. */
+      const deadline = task.due_date && task.due_date >= todayStr ? task.due_date : "";
+
       // Only what is left: time already logged is not planned again.
       const totalDur = App.taskPlanMinutes(task);
       const maxSession = task.max_session_minutes || maxSessionGlobal;
@@ -856,13 +876,13 @@
       while (remaining > 0) { const c = Math.min(remaining, maxSession); chunks.push(c); remaining -= c; }
 
       const placed = [];
-      const tentative = []; // intervals added to busy, for rollback
       let cursorDs = earliestDs, cursorMin = earliestMin;
 
       for (let ci = 0; ci < chunks.length; ci++) {
         const dur = chunks[ci];
         let ok = false;
         for (const ds of futureDates) {
+          if (deadline && ds > deadline) continue;
           if (cursorDs && ds < cursorDs) continue;
           const dayName = App.DAY_KEYS[(D.dayOfWeek(ds) + 6) % 7];
           const dayBudget = (hoursPerDay[dayName] || 0) * 60;
@@ -886,7 +906,6 @@
             const interval = [slot, slot + dur + (includeBreaks && ci < chunks.length - 1 ? breakMinutes : 0)];
             busy[ds] = mergeIntervals([...busy[ds], interval]);
             taskMinutes[ds] += dur;
-            tentative.push({ ds, interval, dur });
             placed.push({ id: App.uid(), date: ds, start_min: slot, duration: dur });
             cursorDs = ds; cursorMin = interval[1];
             ok = true;
@@ -896,18 +915,28 @@
         if (!ok) break;
       }
 
-      if (placed.length === chunks.length) {
+      /* Keep whatever landed instead of rolling the whole task back.
+
+         All-or-nothing meant a three-hour task with two hours of room got an
+         empty calendar and an error. Two of three hours planned is better than
+         none, and it surfaces the shortfall while there is still time to move
+         something. The rollback bookkeeping went with it: there is no longer
+         a case where placed blocks have to be taken back off the calendar. */
+      const shortfall = chunks.slice(placed.length).reduce((n, c) => n + c, 0);
+      const window = deadline ? `before it's due on ${D.fmtShort(deadline)}` : "in this week";
+
+      if (placed.length) {
         results.push({ taskId: task.id, title: task.title, subject_name: task.subject_name || "", blocks: placed });
         const last = placed[placed.length - 1];
         placedEnd[task.id] = { ds: last.date, endMin: last.start_min + last.duration };
-      } else {
-        // rollback tentative intervals so failed chunks don't poison other tasks
-        for (const { ds, interval, dur } of tentative) {
-          busy[ds] = busy[ds].filter((iv) => !(iv[0] === interval[0] && iv[1] === interval[1]));
-          busy[ds] = mergeIntervals(busy[ds]);
-          taskMinutes[ds] -= dur;
+        if (shortfall) {
+          errors.push({
+            title: task.title,
+            reason: `Only ${App.fmtMinutes(totalDur - shortfall)} of ${App.fmtMinutes(totalDur)} fits ${window} — ${App.fmtMinutes(shortfall)} still needs a slot`,
+          });
         }
-        errors.push({ title: task.title, reason: "Not enough free time in the week" });
+      } else {
+        errors.push({ title: task.title, reason: `No free time ${window}` });
       }
     }
 

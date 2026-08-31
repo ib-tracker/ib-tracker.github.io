@@ -360,7 +360,9 @@
 
     const issues = res.error_count ? `
       <div class="as-issues">
-        <div class="as-issues-head">${App.icon("alertCircle")} ${res.error_count} couldn't be placed</div>
+        ${/* Not "couldn't be placed" any more: a task that got two of its
+              three hours is in this list AND on the calendar. */""}
+        <div class="as-issues-head">${App.icon("alertCircle")} ${res.error_count} need${res.error_count === 1 ? "s" : ""} attention</div>
         ${res.errors.map((e) => `
           <div class="as-issue"><strong>${esc(e.title)}</strong><span>${esc(e.reason)}</span></div>`).join("")}
       </div>` : "";
