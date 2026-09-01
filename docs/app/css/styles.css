@@ -592,7 +592,9 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .ftimer-time.overtime .big { color: var(--danger-ink); }
 .ftimer-time .est { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
 .ftimer-time .ot-label { font-size: 11px; color: var(--danger-ink); font-weight: 600; margin-top: 2px; }
-.ftimer-controls { display: flex; justify-content: center; gap: 7px; margin-top: 8px; }
+/* Four controls will not sit on one row in a 280px panel, and the checkpoint
+   is icon-only for the same reason. Wrapping beats letting them overflow. */
+.ftimer-controls { display: flex; justify-content: center; gap: 7px; margin-top: 8px; flex-wrap: wrap; }
 
 /* ---------- Study session ---------- */
 .study-ring-wrap { display: flex; justify-content: center; padding: 8px 0; }

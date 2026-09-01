@@ -1,15 +1,15 @@
 {
-  "version": "1.6.2",
+  "version": "1.6.3",
   "released": "2026-09-01",
   "notes": [
-    "The full-screen timer now shows how far through the whole task you are, not just this sitting. Under the countdown there is a second, quieter bar reading something like \"57m of 3h on this task\", and it counts up live while you work rather than jumping only once you stop.",
-    "This matters because the timer aims at what is left. On a 3-hour task with 45 minutes already done it counts down from 2h 15m, and nothing on the screen used to tell you those 45 minutes existed.",
-    "The small floating timer gets the same figure as a one-line \"57m / 3h on task\" under its clock.",
-    "Running over on one sitting turns the countdown and its bar red, as before. The task bar stays neutral, because going long on one sitting says nothing about the task as a whole."
+    "Pausing no longer inflates the time logged against a task. The timer banked the whole stretch between starting and stopping rather than the minutes it had actually counted, so pausing for a fifty-minute lunch logged the lunch as study. The clock always had it right; only what got saved was wrong. Sessions already recorded this way keep whatever they recorded.",
+    "The task timer can log progress without ending the session. \"Log progress\" banks the minutes so far and keeps the clock running, so a long stretch on one task can be recorded in pieces. The clock restarts from zero and re-aims at what is left, so nothing is counted twice.",
+    "Stop is now called \"Log & stop\", because it always did log your time and the old name read like throwing it away.",
+    "Overtime shows how far over you actually are. A 2h 15m sitting run fifteen minutes long used to say \"+2:30:01\" — the running total wearing a plus sign — which read as being two and a half hours over. It now says \"+15:01\", with \"over 2h 15m · 2h 30m total\" underneath."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.2.zip",
-    "sha256": "2b173626e253540944a50c1ecea20463b7db3f2fef8ca46235d78585bbd5b2a8",
-    "size": 241730
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.3.zip",
+    "sha256": "cbc5fb981538b0bfd65a94929e69dc1592d8e65f3f19b523bf61795fe73adc50",
+    "size": 242883
   }
 }

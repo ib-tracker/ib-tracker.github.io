@@ -128,7 +128,13 @@
       subject_name: task ? task.subject_name || "" : "",
       estimated_minutes: t.estimatedMinutes || 0,
       overtime_minutes: t.estimatedMinutes ? actualMin - t.estimatedMinutes : 0,
-      start_time: t.startISO,
+    /* Derived from the counted elapsed, NOT from startISO. startISO is when
+       the timer was first started, so a session that was paused banked the
+       whole wall-clock span: pause for a fifty-minute lunch and the lunch was
+       logged as study. The clock had it right all along — pausedAccumSec is
+       exactly the time that should not count. Study Session already logged
+       this way; the task timer did not. */
+      start_time: new Date(Date.now() - elapsed * 1000).toISOString(),
       end_time: new Date().toISOString(),
     });
     if (markComplete && t.taskId && task && !task.completed) {
@@ -142,9 +148,69 @@
     App.toast(markComplete ? "Task completed & session logged" : `${App.xp.sessionEncouragement()} · ${App.fmtMinutes(actualMin)} logged`);
   };
 
+  /* Bank what has been worked so far and keep the clock running.
+
+     Stop already logged the time, but it also ended the sitting, so a long
+     stretch on one task could not be recorded in pieces: you either stopped
+     — ending it — or carried the whole lot in one lump that existed nowhere
+     until you did. This is the task timer's version of the study session's
+     "Log & move on".
+
+     The clock restarts from zero afterwards and re-aims at what is now left,
+     exactly as T.start does. Without the restart the next Stop would log from
+     the original start and bank these minutes a second time. */
+  T.logProgress = function () {
+    const t = App.state().timer;
+    if (!t) return;
+    const elapsed = T.elapsedSec(t);
+    if (elapsed < 60) {
+      App.toast("Nothing to log yet — less than a minute on the clock", "error");
+      return;
+    }
+    const mins = Math.round(elapsed / 60);
+    const task = t.taskId ? App.taskById(t.taskId) : null;
+    App.logSession({
+      task_id: t.taskId || "",
+      task_title: t.taskTitle || "Study Session",
+      subject_name: task ? task.subject_name || "" : "",
+      estimated_minutes: t.estimatedMinutes || 0,
+      overtime_minutes: t.estimatedMinutes ? mins - t.estimatedMinutes : 0,
+      start_time: new Date(Date.now() - elapsed * 1000).toISOString(),
+      end_time: new Date().toISOString(),
+    });
+    App.update((s) => {
+      if (!s.timer) return;
+      s.timer.startEpoch = Date.now();
+      s.timer.pausedAccumSec = 0;
+      s.timer.startISO = new Date().toISOString();
+      // Re-aim at the remainder now that these minutes count towards the task.
+      if (task) s.timer.estimatedMinutes = App.taskMinutesLeft(App.taskById(task.id));
+    });
+    App.sfx("session");
+    App.toast(`${App.fmtMinutes(mins)} logged — timer still running`);
+  };
+
   T.toggleMinimize = function () {
     App.update((s) => { if (s.timer) s.timer.minimized = !s.timer.minimized; });
   };
+
+  /* What the big number says.
+
+     In overtime it now shows the OVERAGE rather than the running total. The
+     total was prefixed with "+" and sat directly under "over your estimate",
+     so a 2h 15m sitting that had run fifteen minutes long announced itself as
+     "+2:30:01" — read as two and a half hours over. The total has not gone
+     away; it moved to the line underneath, where it isn't wearing a plus
+     sign. */
+  function clockText(elapsed, estSec, overtime) {
+    if (!estSec) return App.fmtClock(elapsed);
+    return App.fmtClock(overtime ? elapsed - estSec : estSec - elapsed);
+  }
+
+  function subText(t, elapsed, estSec, overtime) {
+    if (overtime) return `over ${App.fmtMinutes(t.estimatedMinutes)} · ${App.fmtMinutes(Math.round(elapsed / 60))} total`;
+    return estSec > 0 ? `of ${App.fmtMinutes(t.estimatedMinutes)}` : "elapsed";
+  }
 
   /* Task-level progress for the timer views: minutes already banked plus the
      minutes on the clock right now.
@@ -179,14 +245,14 @@
     const tp = taskProgress(t, elapsed);
 
     if (fullscreen) {
-      const display = estSec > 0 && !overtime ? App.fmtClock(estSec - elapsed) : App.fmtClock(elapsed);
+      const display = clockText(elapsed, estSec, overtime);
       const pct = estSec > 0 ? App.clamp((elapsed / estSec) * 100, 0, 100) : 0;
       root.innerHTML = `
         <div class="ftimer-full ${overtime ? "overtime" : ""}" role="dialog" aria-label="Timer">
           <button class="icon-btn ftimer-exit" data-ft-exit title="Exit full screen (Esc)" aria-label="Exit full screen">${App.icon("minimize")}</button>
           <div class="ff-task">${esc(t.taskTitle || "Study Session")}</div>
           <div class="ff-clock" data-ft-time>${overtime ? "+" : ""}${display}</div>
-          <div class="ff-sub">${overtime ? "over your estimate" : estSec > 0 ? `of ${App.fmtMinutes(t.estimatedMinutes)}` : "elapsed"}</div>
+          <div class="ff-sub" data-ft-sub>${subText(t, elapsed, estSec, overtime)}</div>
           ${estSec > 0 ? `<div class="ff-bar"><span data-ft-bar style="width:${pct}%"></span></div>` : ""}
           ${tp ? `
             <div class="ff-taskprog">
@@ -200,7 +266,9 @@
             ${t.paused
               ? `<button class="btn btn-primary btn-lg" data-ft-resume>${App.icon("play")} Resume</button>`
               : `<button class="btn btn-outline btn-lg" data-ft-pause>${App.icon("pause")} Pause</button>`}
-            <button class="btn btn-outline btn-lg" data-ft-stop>${App.icon("square")} Stop</button>
+            ${t.taskId ? `<button class="btn btn-outline btn-lg" data-ft-log
+                    title="Bank the time so far and keep going">${App.icon("save")} Log progress</button>` : ""}
+            <button class="btn btn-outline btn-lg" data-ft-stop>${App.icon("square")} Log &amp; stop</button>
             ${t.taskId ? `<button class="btn btn-good btn-lg" data-ft-finish>${App.icon("check")} Finish</button>` : ""}
           </div>
         </div>`;
@@ -208,6 +276,7 @@
       qf("[data-ft-exit]").addEventListener("click", () => T.setFullscreen(false));
       if (qf("[data-ft-pause]")) qf("[data-ft-pause]").addEventListener("click", () => T.pause());
       if (qf("[data-ft-resume]")) qf("[data-ft-resume]").addEventListener("click", () => T.resume());
+      if (qf("[data-ft-log]")) qf("[data-ft-log]").addEventListener("click", () => T.logProgress());
       if (qf("[data-ft-stop]")) qf("[data-ft-stop]").addEventListener("click", () => { T.setFullscreen(false); T.stop(false); });
       if (qf("[data-ft-finish]")) qf("[data-ft-finish]").addEventListener("click", () => { T.setFullscreen(false); T.stop(true); });
       return;
@@ -223,7 +292,7 @@
       return;
     }
 
-    const display = estSec > 0 && !overtime ? App.fmtClock(estSec - elapsed) : App.fmtClock(elapsed);
+    const display = clockText(elapsed, estSec, overtime);
     root.innerHTML = `
       <div class="ftimer-panel">
         <div class="ftimer-title">
@@ -234,7 +303,7 @@
         <div class="ftimer-time ${overtime ? "overtime" : ""}" data-ft-timewrap>
           <div class="big"><span data-ft-time>${overtime ? "+" : ""}${display}</span></div>
           ${overtime
-            ? `<div class="ot-label">Overtime</div>`
+            ? `<div class="ot-label" data-ft-sub>over est. · ${App.fmtMinutes(Math.round(elapsed / 60))} total</div>`
             : estSec > 0 ? `<div class="est">est. ${App.fmtMinutes(t.estimatedMinutes)}</div>` : ""}
           ${tp ? `<div class="est task" data-ft-tpline>${App.fmtMinutes(tp.done)} / ${App.fmtMinutes(tp.est)} on task</div>` : ""}
         </div>
@@ -242,7 +311,9 @@
           ${t.paused
             ? `<button class="btn btn-primary btn-sm" data-ft-resume>${App.icon("play")} Resume</button>`
             : `<button class="btn btn-outline btn-sm" data-ft-pause>${App.icon("pause")} Pause</button>`}
-          <button class="btn btn-outline btn-sm" data-ft-stop>${App.icon("square")} Stop</button>
+          ${t.taskId ? `<button class="btn btn-outline btn-sm" data-ft-log
+                  title="Log progress and keep going" aria-label="Log progress and keep going">${App.icon("save")}</button>` : ""}
+          <button class="btn btn-outline btn-sm" data-ft-stop>${App.icon("square")} Log &amp; stop</button>
           ${t.taskId ? `<button class="btn btn-good btn-sm" data-ft-finish>${App.icon("check")} Finish</button>` : ""}
         </div>
       </div>`;
@@ -252,6 +323,7 @@
     if (q("[data-ft-full]")) q("[data-ft-full]").addEventListener("click", () => T.setFullscreen(true));
     if (q("[data-ft-pause]")) q("[data-ft-pause]").addEventListener("click", () => T.pause());
     if (q("[data-ft-resume]")) q("[data-ft-resume]").addEventListener("click", () => T.resume());
+    if (q("[data-ft-log]")) q("[data-ft-log]").addEventListener("click", () => T.logProgress());
     if (q("[data-ft-stop]")) q("[data-ft-stop]").addEventListener("click", () => T.stop(false));
     if (q("[data-ft-finish]")) q("[data-ft-finish]").addEventListener("click", () => T.stop(true));
   };
@@ -275,9 +347,14 @@
       }
       else if (!t.paused) {
         const node = document.querySelector("#floating-timer [data-ft-time]");
-        if (node) {
-          const display = estSec > 0 && !overtime ? App.fmtClock(estSec - elapsed) : App.fmtClock(elapsed);
-          node.textContent = (overtime ? "+" : "") + display;
+        if (node) node.textContent = (overtime ? "+" : "") + clockText(elapsed, estSec, overtime);
+        /* The overtime sub-line carries the running total, so it has to move
+           with the clock rather than wait for the next full re-render. */
+        const sub = document.querySelector("#floating-timer [data-ft-sub]");
+        if (sub && overtime) {
+          sub.textContent = sub.classList.contains("ot-label")
+            ? `over est. · ${App.fmtMinutes(Math.round(elapsed / 60))} total`
+            : subText(t, elapsed, estSec, overtime);
         }
         // The full-screen view has a progress bar the small one doesn't.
         const bar = document.querySelector("#floating-timer [data-ft-bar]");
