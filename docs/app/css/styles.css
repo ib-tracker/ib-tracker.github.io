@@ -1695,6 +1695,24 @@ details[open] > .set-head .set-chev { transform: rotate(90deg); }
   transition: width 1s linear;
 }
 .ftimer-full.overtime .ff-bar span { background: var(--danger-ink); }
+
+/* The task bar sits under the sitting bar and must read as the quieter of the
+   two: the countdown and its bar are what you pace against minute to minute,
+   this is the long game. Thinner, dimmer, and it never turns red — running
+   over on one sitting says nothing about the task as a whole. */
+/* The gap above has to beat the gap below by a wide margin, or the label
+   floats between the two bars and reads as belonging to the sitting bar
+   above it rather than the task bar it sits on top of. */
+.ff-taskprog { width: min(420px, 70vw); margin-top: 34px; }
+.ff-tp-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; color: var(--ink-2); margin-bottom: 7px;
+}
+.ff-bar.task { height: 4px; margin-top: 0; }
+.ftimer-full .ff-bar.task span,
+.ftimer-full.overtime .ff-bar.task span { background: var(--ink-2); }
+/* the one-liner in the small floating panel */
+.ftimer-time .est.task { color: var(--ink-2); font-weight: 600; }
 .ff-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 34px; }
 
 /* ---------- sub-tasks on a task card ----------

@@ -146,6 +146,26 @@
     App.update((s) => { if (s.timer) s.timer.minimized = !s.timer.minimized; });
   };
 
+  /* Task-level progress for the timer views: minutes already banked plus the
+     minutes on the clock right now.
+
+     The sitting's own countdown aims at what was LEFT when it started, so on a
+     three-hour task with forty-five minutes done it counts down from 2h 15m
+     and fills its bar when the sitting ends — nothing on screen said the
+     earlier forty-five minutes existed at all.
+
+     Counted live because a bar that only moves once you stop is no use on a
+     screen you sit and stare at while you work. The minutes become real on
+     Stop or Finish, and a clock left running overnight is discarded rather
+     than banked, so nothing is claimed here that cannot be earned. */
+  function taskProgress(t, elapsedSec) {
+    if (!t.taskId) return null;
+    const task = App.taskById(t.taskId);
+    if (!task || !task.estimated_minutes) return null;
+    const done = App.taskMinutesLogged(task.id) + Math.round(elapsedSec / 60);
+    return { done, est: task.estimated_minutes, pct: App.clamp((done / task.estimated_minutes) * 100, 0, 100) };
+  }
+
   /* ---------- floating widget ---------- */
   TU.renderFloating = function () {
     const root = document.getElementById("floating-timer");
@@ -156,6 +176,7 @@
     const elapsed = T.elapsedSec(t);
     const estSec = (t.estimatedMinutes || 0) * 60;
     const overtime = estSec > 0 && elapsed > estSec;
+    const tp = taskProgress(t, elapsed);
 
     if (fullscreen) {
       const display = estSec > 0 && !overtime ? App.fmtClock(estSec - elapsed) : App.fmtClock(elapsed);
@@ -167,6 +188,14 @@
           <div class="ff-clock" data-ft-time>${overtime ? "+" : ""}${display}</div>
           <div class="ff-sub">${overtime ? "over your estimate" : estSec > 0 ? `of ${App.fmtMinutes(t.estimatedMinutes)}` : "elapsed"}</div>
           ${estSec > 0 ? `<div class="ff-bar"><span data-ft-bar style="width:${pct}%"></span></div>` : ""}
+          ${tp ? `
+            <div class="ff-taskprog">
+              <div class="ff-tp-label">
+                <span data-ft-tptext>${App.fmtMinutes(tp.done)} of ${App.fmtMinutes(tp.est)} on this task</span>
+                <span data-ft-tppct>${Math.round(tp.pct)}%</span>
+              </div>
+              <div class="ff-bar task"><span data-ft-taskbar style="width:${tp.pct}%"></span></div>
+            </div>` : ""}
           <div class="ff-controls">
             ${t.paused
               ? `<button class="btn btn-primary btn-lg" data-ft-resume>${App.icon("play")} Resume</button>`
@@ -207,6 +236,7 @@
           ${overtime
             ? `<div class="ot-label">Overtime</div>`
             : estSec > 0 ? `<div class="est">est. ${App.fmtMinutes(t.estimatedMinutes)}</div>` : ""}
+          ${tp ? `<div class="est task" data-ft-tpline>${App.fmtMinutes(tp.done)} / ${App.fmtMinutes(tp.est)} on task</div>` : ""}
         </div>
         <div class="ftimer-controls">
           ${t.paused
@@ -252,6 +282,21 @@
         // The full-screen view has a progress bar the small one doesn't.
         const bar = document.querySelector("#floating-timer [data-ft-bar]");
         if (bar && estSec > 0) bar.style.width = App.clamp((elapsed / estSec) * 100, 0, 100) + "%";
+
+        /* The task bar counts live, so it is driven from here rather than left
+           to the next full re-render — which only happens when the sitting
+           crosses into overtime, i.e. almost never while you are working. */
+        const tp = taskProgress(t, elapsed);
+        if (tp) {
+          const tBar = document.querySelector("#floating-timer [data-ft-taskbar]");
+          if (tBar) tBar.style.width = tp.pct + "%";
+          const tPct = document.querySelector("#floating-timer [data-ft-tppct]");
+          if (tPct) tPct.textContent = Math.round(tp.pct) + "%";
+          const tText = document.querySelector("#floating-timer [data-ft-tptext]");
+          if (tText) tText.textContent = `${App.fmtMinutes(tp.done)} of ${App.fmtMinutes(tp.est)} on this task`;
+          const tLine = document.querySelector("#floating-timer [data-ft-tpline]");
+          if (tLine) tLine.textContent = `${App.fmtMinutes(tp.done)} / ${App.fmtMinutes(tp.est)} on task`;
+        }
       }
     } else {
       lastOvertime = null;

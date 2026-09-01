@@ -1,14 +1,15 @@
 {
-  "version": "1.6.1",
-  "released": "2026-08-31",
+  "version": "1.6.2",
+  "released": "2026-09-01",
   "notes": [
-    "The scheduler no longer plans work for after a task is due. It never checked the due date at all — it walked the week looking for any free gap — so a task due Tuesday could be given a Saturday slot and the run would still report success. Now nothing is placed past its deadline, and anything already overdue keeps getting the earliest slot going.",
-    "Deadlines now decide the order, with priority breaking ties between things due the same day. Priority used to come first, which is how a critical task due in three weeks took the slots in front of an ordinary one due tomorrow.",
-    "When a task genuinely cannot fit before its deadline, it books what it can and tells you what is left over, instead of scheduling nothing at all. Two of three hours planned beats an empty calendar, and you find out you are short while there is still time to move something."
+    "The full-screen timer now shows how far through the whole task you are, not just this sitting. Under the countdown there is a second, quieter bar reading something like \"57m of 3h on this task\", and it counts up live while you work rather than jumping only once you stop.",
+    "This matters because the timer aims at what is left. On a 3-hour task with 45 minutes already done it counts down from 2h 15m, and nothing on the screen used to tell you those 45 minutes existed.",
+    "The small floating timer gets the same figure as a one-line \"57m / 3h on task\" under its clock.",
+    "Running over on one sitting turns the countdown and its bar red, as before. The task bar stays neutral, because going long on one sitting says nothing about the task as a whole."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.1.zip",
-    "sha256": "15c53b8fa541f69e8fd3cba7c1e2c3605e1c773d4e10b3a6ee23397d45250dee",
-    "size": 240693
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.2.zip",
+    "sha256": "2b173626e253540944a50c1ecea20463b7db3f2fef8ca46235d78585bbd5b2a8",
+    "size": 241730
   }
 }
