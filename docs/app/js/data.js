@@ -165,7 +165,21 @@
   /* ---------- entity CRUD ---------- */
   function now() { return new Date().toISOString(); }
 
+  /* Generous caps: nothing anyone actually writes comes near them. They exist
+     so a runaway paste cannot be stored forever and eat the localStorage quota
+     the whole app shares — the layout survives any length now, but the storage
+     budget does not. Applied on the way in, so both creating and editing are
+     covered and existing longer text is left exactly as it is. */
+  const MAX_TITLE = 200, MAX_DESC = 5000;
+  function capText(patch) {
+    if (!patch) return patch;
+    if (typeof patch.title === "string" && patch.title.length > MAX_TITLE) patch.title = patch.title.slice(0, MAX_TITLE);
+    if (typeof patch.description === "string" && patch.description.length > MAX_DESC) patch.description = patch.description.slice(0, MAX_DESC);
+    return patch;
+  }
+
   function buildTask(data) {
+    capText(data);
     return Object.assign({
       id: App.uid(), title: "", description: "", category: "subject_task",
       subject_name: "", university_course_id: "", due_date: "",
@@ -192,6 +206,7 @@
   };
 
   App.updateTask = function (id, patch, opts) {
+    capText(patch);
     App.update((s) => {
       const t = s.tasks.find((x) => x.id === id);
       if (t) Object.assign(t, patch, { updated_at: now() });

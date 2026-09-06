@@ -83,7 +83,7 @@
           ${UI.pageHead("Grades", "Track subject grades and IB core points",
             `<button class="btn btn-primary" data-add-grade>${App.icon("plus")} Add Subject</button>`)}
 
-          <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
             <div class="card stat-tile" style="justify-content:center;text-align:center">
               <div>
                 <div class="stat-value" style="color:var(--accent-soft-ink)">${totalPoints}<span class="muted" style="font-size:14px;font-weight:500"> / ${maxPoints || "—"}</span></div>

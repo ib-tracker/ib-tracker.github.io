@@ -163,7 +163,7 @@
             ${statTile("clock", "Due today", dueToday, "var(--warning-soft)", "var(--warning-ink)")}
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 280px;gap:24px" class="dash-cols">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px" class="dash-cols">
             <div class="stack" data-task-region>
               ${overdueTasks.length ? `
                 <div>
@@ -231,7 +231,7 @@
             </div>
           </div>
         </div>
-        <style>@media (max-width: 1000px){ .dash-cols{grid-template-columns:1fr !important} }</style>`;
+        <style>@media (max-width: 1000px){ .dash-cols{grid-template-columns:minmax(0,1fr) !important} }</style>`;
     },
     mount(el) {
       el.querySelectorAll("[data-add-task]").forEach((b) =>

@@ -216,7 +216,7 @@
       .range-box .range { font-size: 13px; font-weight: 700; }
       .range-box .gen { font-size: 10px; color: #6b7280; margin-top: 2px; }
       h2 { font-size: 13px; margin: 22px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #e5e4dd; letter-spacing: -0.01em; }
-      .hl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; }
+      .hl-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
       .hl { border: 1px solid #e5e4dd; border-radius: 10px; padding: 10px 12px; }
       .hl .v { font-size: 17px; font-weight: 750; letter-spacing: -0.02em; }
       .hl .l { font-size: 10px; color: #6b7280; margin-top: 1px; }
@@ -229,7 +229,7 @@
       .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: baseline; }
       .grade-pill { display: inline-block; min-width: 22px; text-align: center; padding: 1px 6px; border-radius: 6px; font-weight: 700; background: #eceafc; color: #4338ca; }
       .grade-pill.t { background: #e3f4e3; color: #096f09; }
-      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
       .dl { display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; border: 1px solid #e5e4dd; border-radius: 9px; margin-bottom: 6px; }
       .dl .t { font-weight: 600; font-size: 11px; }
       .dl .k { font-size: 10px; color: #6b7280; }

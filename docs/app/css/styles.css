@@ -277,8 +277,8 @@ h1, h2, h3, h4 { font-weight: 650; letter-spacing: -0.01em; }
 input[type="date"].input, input[type="time"].input { cursor: text; }
 .input-sm { height: 30px; font-size: 12.5px; border-radius: 8px; }
 .field .hint { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; line-height: 1.4; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+.form-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 560px) { .form-row { grid-template-columns: minmax(0, 1fr); } }
 
 /* "More options" disclosure inside the task modal */
 .adv-toggle {
@@ -365,8 +365,8 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .empty-inline .btn { margin-top: 0; }
 
 /* ---------- Stat tiles ---------- */
-.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+.stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stat-tile { display: flex; align-items: center; gap: 12px; padding: 16px; }
 .stat-icon {
   width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
@@ -389,11 +389,23 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .task-card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .task-card .t-body { flex: 1; min-width: 0; }
 .task-card .t-top { display: flex; align-items: flex-start; gap: 8px; }
-.task-card .t-title { font-size: 13.5px; font-weight: 550; line-height: 1.35; flex: 1; min-width: 0; }
+/* overflow-wrap: anywhere is the load-bearing part. A six-hundred character
+   string with no spaces — a pasted URL, a token — is a single unbreakable
+   word, and an unbreakable word sets a min-content width that no amount of
+   min-width: 0 further up can argue with. Without this the title alone broke
+   Timeline as well as the Dashboard, no grid required. */
+.task-card .t-title {
+  font-size: 13.5px; font-weight: 550; line-height: 1.35; flex: 1; min-width: 0;
+  overflow-wrap: anywhere;
+}
 .task-card.done .t-title { text-decoration: line-through; color: var(--ink-3); }
+/* Two lines then an ellipsis: enough to recognise the task by, while cards
+   keep a predictable height and a long list stays scannable. The full text is
+   always in the edit modal. */
 .task-card .t-desc {
   font-size: 12px; color: var(--ink-3); margin-top: 2px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
 }
 .task-card .t-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; align-items: center; }
 .task-card .t-actions {
@@ -454,8 +466,8 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 }
 .subj-detail-head h1 { font-size: 22px; letter-spacing: -0.02em; }
 .subj-detail-head .sub { font-size: 13px; margin-top: 2px; }
-.subj-detail-grid { display: grid; grid-template-columns: 250px 1fr; gap: 16px; margin-bottom: 20px; align-items: start; }
-@media (max-width: 720px) { .subj-detail-grid { grid-template-columns: 1fr; } }
+.subj-detail-grid { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; margin-bottom: 20px; align-items: start; }
+@media (max-width: 720px) { .subj-detail-grid { grid-template-columns: minmax(0, 1fr); } }
 /* Was align-items:start, which left ~190px of dead space under the grade ring
    whenever the right-hand column ran longer. Stretching the card and centring
    its contents fills that honestly instead of hanging the ring off the top. */
@@ -469,7 +481,7 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .subj-gap { margin-top: 9px; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 8px; display: inline-block; }
 .subj-gap.warn { background: var(--warning-soft); color: var(--warning-ink); }
 .subj-gap.good { background: var(--good-soft); color: var(--good-ink); }
-.subj-mini-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.subj-mini-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .subj-mini { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
 .subj-mini .v { font-size: 16px; font-weight: 750; letter-spacing: -0.01em; }
 .subj-mini .l { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
@@ -628,7 +640,7 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .now-card .now-elapsed { font-size: 24px; font-family: var(--mono); font-weight: 700; }
 
 /* ---------- Calendar (month) ---------- */
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
 .cal-dow { text-align: center; font-size: 11px; font-weight: 600; color: var(--ink-3); padding: 6px 0; }
 .cal-day {
   position: relative; min-height: 58px; border-radius: 10px; padding-top: 7px;
@@ -679,8 +691,8 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .cal-plan-item .cpi-dur { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
 
 /* ---------- Scheduler ---------- */
-.sched-layout { display: grid; grid-template-columns: 230px 1fr; gap: 20px; align-items: start; }
-@media (max-width: 1000px) { .sched-layout { grid-template-columns: 1fr; } }
+.sched-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 1000px) { .sched-layout { grid-template-columns: minmax(0, 1fr); } }
 .unsched-list { display: flex; flex-direction: column; gap: 7px; max-height: 68vh; overflow-y: auto; padding-right: 2px; }
 .unsched-card {
   background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px;
@@ -761,7 +773,7 @@ input[type="date"].input, input[type="time"].input { cursor: text; }
 .week-item .wi-x svg { width: 9px; height: 9px; }
 .week-item:hover .wi-x { display: flex; }
 
-.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .month-cell {
   border-left: 1px solid var(--grid); border-top: 1px solid var(--grid);
   min-height: 92px; padding: 6px; font-size: 11px; transition: background .1s;
@@ -891,7 +903,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .uni-facts { display: flex; flex-wrap: wrap; gap: 5px 16px; margin-top: 9px; font-size: 12px; color: var(--ink-2); }
 .uni-facts strong { color: var(--ink); font-weight: 650; }
 .req-bars { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
-.req-bar-row { display: grid; grid-template-columns: 116px 1fr 84px; align-items: center; gap: 10px; font-size: 12.5px; }
+.req-bar-row { display: grid; grid-template-columns: 116px minmax(0, 1fr) 84px; align-items: center; gap: 10px; font-size: 12.5px; }
 .req-bar-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .req-bar-track { position: relative; height: 8px; border-radius: 5px; background: var(--surface-3); }
 .req-bar-fill { position: absolute; inset: 0 auto 0 0; height: 100%; border-radius: 5px; transition: width .5s ease; }
@@ -916,8 +928,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .checklist-row:hover .icon-btn { opacity: 1; }
 
 /* ---------- Templates ---------- */
-.tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-@media (max-width: 760px) { .tpl-grid { grid-template-columns: 1fr; } }
+.tpl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 760px) { .tpl-grid { grid-template-columns: minmax(0, 1fr); } }
 .tpl-card { padding: 16px; }
 .tpl-card .tpl-name { font-size: 14px; font-weight: 650; }
 .tpl-card .t-actions { display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
@@ -1383,8 +1395,8 @@ details[open] > .set-head .set-chev { transform: rotate(90deg); }
 .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; } .mt-6 { margin-top: 24px; }
 .mb-2 { margin-bottom: 8px; } .mb-3 { margin-bottom: 12px; } .mb-4 { margin-bottom: 16px; } .mb-6 { margin-bottom: 24px; }
 .muted { color: var(--ink-3); } .small { font-size: 12px; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 860px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
 .divider { border: none; border-top: 1px solid var(--hairline); margin: 16px 0; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -1484,8 +1496,8 @@ details[open] > .set-head .set-chev { transform: rotate(90deg); }
 .focus-clock { font-size: 60px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin: 10px 0 2px; }
 .focus-clock.paused { color: var(--ink-3); }
 .focus-clock-sub { font-size: 13px; color: var(--ink-3); }
-.focus-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 720px) { .focus-cols { grid-template-columns: 1fr; } }
+.focus-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 720px) { .focus-cols { grid-template-columns: minmax(0, 1fr); } }
 .focus-list { display: flex; flex-direction: column; gap: 7px; }
 .focus-task { display: flex; align-items: center; gap: 10px; padding: 9px 11px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; }
 .focus-task .ft-time { font-size: 12px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; width: 58px; flex-shrink: 0; }
@@ -1550,7 +1562,7 @@ details[open] > .set-head .set-chev { transform: rotate(90deg); }
 /* ---------- Notes: notebook layout ---------- */
 .notes-page { display: flex; flex-direction: column; min-height: 0; }
 .notes-app {
-  display: grid; grid-template-columns: 272px 1fr; gap: 16px; align-items: stretch;
+  display: grid; grid-template-columns: 272px minmax(0, 1fr); gap: 16px; align-items: stretch;
   min-height: 0; height: calc(100vh - 168px); min-height: 440px;
 }
 .notes-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 10px; }
@@ -1628,7 +1640,7 @@ details[open] > .set-head .set-chev { transform: rotate(90deg); }
 .note-editor ul.checklist li.checked { color: var(--ink-3); text-decoration: line-through; }
 
 @media (max-width: 760px) {
-  .notes-app { grid-template-columns: 1fr; height: auto; }
+  .notes-app { grid-template-columns: minmax(0, 1fr); height: auto; }
   .notes-list { max-height: 240px; }
   .notes-editor { min-height: 60vh; }
 }

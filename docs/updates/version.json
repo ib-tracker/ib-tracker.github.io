@@ -1,15 +1,15 @@
 {
-  "version": "1.6.3",
-  "released": "2026-09-01",
+  "version": "1.6.4",
+  "released": "2026-09-06",
   "notes": [
-    "Pausing no longer inflates the time logged against a task. The timer banked the whole stretch between starting and stopping rather than the minutes it had actually counted, so pausing for a fifty-minute lunch logged the lunch as study. The clock always had it right; only what got saved was wrong. Sessions already recorded this way keep whatever they recorded.",
-    "The task timer can log progress without ending the session. \"Log progress\" banks the minutes so far and keeps the clock running, so a long stretch on one task can be recorded in pieces. The clock restarts from zero and re-aims at what is left, so nothing is counted twice.",
-    "Stop is now called \"Log & stop\", because it always did log your time and the old name read like throwing it away.",
-    "Overtime shows how far over you actually are. A 2h 15m sitting run fifteen minutes long used to say \"+2:30:01\" — the running total wearing a plus sign — which read as being two and a half hours over. It now says \"+15:01\", with \"over 2h 15m · 2h 30m total\" underneath."
+    "A long task description no longer breaks the Dashboard. One long description used to stretch every card on the page far off the right-hand side, including cards whose own descriptions were short.",
+    "Descriptions now show two lines and then trail off, instead of one, so there is enough there to recognise a task by. The full text is always in the edit window.",
+    "A pasted link or any long stretch of text with no spaces in it could break the layout too, on Timeline as well as the Dashboard. Long unbroken text now wraps instead of forcing the page wider than the window.",
+    "Titles are capped at 200 characters and descriptions at 5,000 when you save. Far longer than anything anyone writes, but it keeps a runaway paste from filling up the browser storage the whole app shares. Anything already saved is left as it is."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.3.zip",
-    "sha256": "cbc5fb981538b0bfd65a94929e69dc1592d8e65f3f19b523bf61795fe73adc50",
-    "size": 242883
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.4.zip",
+    "sha256": "17226f05d86fbf4c7e7895c3c51303d2b8cc3fbedc11f6db87dbf50ebe0ec047",
+    "size": 243509
   }
 }
