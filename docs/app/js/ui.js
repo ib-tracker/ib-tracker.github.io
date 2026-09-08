@@ -45,6 +45,9 @@
     // Ticking a sub-task from a card is a write. Expanding one is not, so
     // [data-tact="subs"] is deliberately absent.
     "[data-subtoggle]",
+    // Skipping an occurrence moves a task's due date, so it is a write.
+    '[data-tact="skip"]',
+    "[data-days-off]", "[data-skip-day]",
     // Both ways out of a study-session task bank time and change a task, so
     // they gate together: greying one and leaving the other live in the same
     // button row would read as a broken screen rather than a locked one.

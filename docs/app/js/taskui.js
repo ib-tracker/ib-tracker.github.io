@@ -49,6 +49,8 @@
               ${task.description ? `<div class="t-desc">${esc(task.description)}</div>` : ""}
             </div>
             <div class="t-actions">
+              ${!task.completed && task.recurring && task.recurring !== "none" && task.due_date
+                ? `<button class="icon-btn" data-tact="skip" title="Skip this one — move to the next ${esc(String(App.RECURRENCE[task.recurring] || "").toLowerCase())} date without completing it">${App.icon("repeat")}</button>` : ""}
               <button class="icon-btn" data-tact="timer" title="Start timer" ${timerActive ? "disabled" : ""}>${App.icon("play")}</button>
               <button class="icon-btn" data-tact="edit" title="Edit">${App.icon("pencil")}</button>
               <button class="icon-btn danger" data-tact="delete" title="Delete">${App.icon("trash")}</button>
@@ -120,6 +122,12 @@
         // Expanding is a read, so it stays available in read-only mode.
         if (expandedSubs.has(id)) expandedSubs.delete(id); else expandedSubs.add(id);
         App.render();
+      } else if (act === "skip") {
+        /* Not a completion: no XP, no streak, no confetti. The point is that
+           this occurrence did not happen, and completing it to move it on
+           would book work that was never done. */
+        const next = App.skipRecurrence(id);
+        if (next) App.toast(`Skipped — next due ${App.dates.fmtShort(next)}`);
       } else if (act === "edit") {
         TK.openTaskModal(task);
       } else if (act === "delete") {

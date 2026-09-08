@@ -64,9 +64,12 @@
 
   // Add / edit a busy block. A block is either a one-off on a date or a weekly
   // repeat on any set of days; either way it can carry a commute on each side.
-  function openBusyBlockModal(defaultDate, existing) {
+  function openBusyBlockModal(defaultDate, existing, occurrenceDate) {
     const b = existing || null;
     const repeats = b ? b.kind === "weekly" : false;
+    /* Only a repeat has occurrences to cancel. A one-off block IS its date, so
+       "skip today" on one would just be Delete wearing a different hat. */
+    const canSkip = !!(b && repeats && occurrenceDate);
     const days = b && b.kind === "weekly" ? App.busyDays(b) : [D.dayOfWeek(defaultDate || D.today())];
     const daySet = new Set(days);
     const travel = b ? App.busyTravel(b) : { before: 0, after: 0 };
@@ -131,6 +134,8 @@
       footSplit: !!b,
       foot: `${b ? `<button class="btn btn-danger-ghost" data-remove>${App.icon("trash")} Delete</button>` : ""}
              <div class="row" style="gap:8px">
+               ${canSkip ? `<button class="btn btn-outline" data-skip-day
+                       title="Cancel just this one day — the rest of the repeat is untouched">${App.icon("calendarX")} Skip ${D.fmtShort(occurrenceDate)}</button>` : ""}
                <button class="btn btn-outline" data-close>Cancel</button>
                <button class="btn btn-primary" data-save>${b ? "Save" : "Add block"}</button>
              </div>`,
@@ -217,11 +222,87 @@
           handle.close();
         });
 
+        const skip = el.querySelector("[data-skip-day]");
+        if (skip) skip.addEventListener("click", () => {
+          App.skipBusyOn(b.id, occurrenceDate);
+          App.toast(`“${b.title}” skipped on ${D.fmtShort(occurrenceDate)} — that time is free again`);
+          handle.close();
+        });
+
         const remove = el.querySelector("[data-remove]");
         if (remove) remove.addEventListener("click", () => {
           App.deleteBusyBlock(b.id);
           App.toast("Busy block deleted");
           handle.close();
+        });
+      },
+    });
+  }
+
+  /* Days off: the inverse of Block Out Days, and the two are easy to confuse,
+     so each dialog says plainly which way it runs. This one gives time BACK —
+     school stops, the afternoon is yours. Block Out Days takes it away. */
+  function openDaysOffModal() {
+    const today = D.today();
+    const listHTML = () => {
+      const list = App.state().daysOff.slice().sort((a, b) => a.start_date.localeCompare(b.start_date));
+      if (!list.length) return `<p class="muted small">No days off yet.</p>`;
+      return list.map((d) => `
+        <div class="row between" style="padding:7px 0;border-bottom:1px solid var(--hairline);gap:8px">
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:600;overflow-wrap:anywhere">${esc(d.title)}</div>
+            <div class="muted small">${D.fmtShort(d.start_date)}${d.end_date !== d.start_date ? ` – ${D.fmtShort(d.end_date)}` : ""}</div>
+          </div>
+          <button class="icon-btn danger" data-del-off="${esc(d.id)}" title="Remove" aria-label="Remove ${esc(d.title)}">${App.icon("trash")}</button>
+        </div>`).join("");
+    };
+
+    UI.openModal({
+      title: "Days Off",
+      body: `
+        <p class="muted small" style="margin-top:0">Days your repeating commitments don't happen — half-term, bank holidays, a strike.
+        Anything that repeats is cancelled on these days and the time comes back to you for studying.
+        To make a day <em>un</em>available instead — travel, exams — use Block Out Days.</p>
+        <div class="field"><label>What is it</label><input class="input" name="title" placeholder="e.g. Half-term, Bank holiday"></div>
+        <div class="form-row">
+          <div class="field"><label>From</label><input class="input" type="date" name="start" value="${today}"></div>
+          <div class="field"><label>To</label><input class="input" type="date" name="end" value="${today}"></div>
+        </div>
+        <p class="hint" data-off-preview></p>
+        <div style="margin-top:14px"><div class="muted small" style="font-weight:600;margin-bottom:4px">EXISTING</div>
+          <div data-off-list>${listHTML()}</div></div>`,
+      foot: `<button class="btn btn-outline" data-close>Close</button>
+             <button class="btn btn-primary" data-save>${App.icon("plus")} Add days off</button>`,
+      onMount(el, handle) {
+        const bindDelete = () => el.querySelectorAll("[data-del-off]").forEach((b) =>
+          b.addEventListener("click", () => { App.deleteDayOff(b.dataset.delOff); refresh(); App.toast("Days off removed"); }));
+        const refresh = () => { el.querySelector("[data-off-list]").innerHTML = listHTML(); bindDelete(); };
+
+        /* Say what is about to be cancelled. "All repeating blocks" is only
+           reassuring if you can see which ones that turned out to mean. */
+        const preview = () => {
+          const f = UI.readForm(el);
+          const p = el.querySelector("[data-off-preview]");
+          if (!f.start || !f.end || f.end < f.start) { p.textContent = ""; return; }
+          const n = D.diffDays(f.start, f.end) + 1;
+          const hit = App.repeatsInRange(f.start, f.end);
+          p.textContent = hit.length
+            ? `${n} day${n > 1 ? "s" : ""} off — clears ${hit.map((b) => b.title).join(", ")} and frees that time for study.`
+            : `${n} day${n > 1 ? "s" : ""} off — nothing that repeats falls in this range.`;
+        };
+        el.querySelectorAll("input").forEach((i) => i.addEventListener("input", preview));
+        preview();
+        bindDelete();
+
+        el.querySelector("[data-save]").addEventListener("click", () => {
+          const f = UI.readForm(el);
+          if (!String(f.title || "").trim()) { App.toast("Give it a name", "error"); return; }
+          if (!f.start || !f.end) { App.toast("Both dates are required", "error"); return; }
+          if (f.end < f.start) { App.toast("The end date must be on or after the start date", "error"); return; }
+          App.createDayOff({ title: f.title.trim(), start_date: f.start, end_date: f.end });
+          App.toast("Days off added");
+          el.querySelector('[name="title"]').value = "";
+          refresh(); preview();
         });
       },
     });
@@ -475,7 +556,7 @@
               ].filter(Boolean).join(" · ");
               return `
                 <div class="week-item busy" style="top:${top}px;height:${height}px" title="${esc(tip)}"
-                  data-edit-busy="${esc(it.block.id)}" role="button" tabindex="0">
+                  data-edit-busy="${esc(it.block.id)}" data-busy-date="${ds}" role="button" tabindex="0">
                   ${bandTop > 0.5 ? `<span class="wi-travel top" style="height:${bandTop}px"></span>` : ""}
                   ${bandBottom > 0.5 ? `<span class="wi-travel bottom" style="height:${bandBottom}px"></span>` : ""}
                   <span class="wi-title"${bandTop > 4 && height - bandTop > 18 ? ` style="margin-top:${bandTop - 2}px"` : ""}>${esc(it.block.title)}</span>
@@ -606,6 +687,8 @@
                 <span class="muted small">${App.fmtMinutes(scheduled)} / ${App.fmtMinutes(available)}</span>
               </div>
               <div class="row wrap" style="gap:8px">
+                <button class="btn btn-outline btn-sm" data-days-off
+                        title="Holidays — days your repeating commitments don't happen">${App.icon("sun")} Days Off</button>
                 <button class="btn btn-outline btn-sm" data-block-days>${App.icon("calendarX")} Block Out Days</button>
                 <button class="btn btn-outline btn-sm" data-add-busy>${App.icon("clock")} Add Busy Block</button>
                 ${anyScheduled ? `<button class="btn btn-danger-ghost btn-sm" data-clear-all>${App.icon("trash")} Clear All</button>` : ""}
@@ -659,6 +742,7 @@
         App.render();
       });
       el.querySelector("[data-add-busy]").addEventListener("click", () => openBusyBlockModal());
+      el.querySelector("[data-days-off]").addEventListener("click", openDaysOffModal);
       el.querySelector("[data-block-days]").addEventListener("click", openDateRangeModal);
       const auto = el.querySelector("[data-auto]");
       if (auto) auto.addEventListener("click", openAutoScheduleModal);
@@ -717,7 +801,7 @@
         const open = (e) => {
           if (e.target.closest("[data-del-busy]")) return;
           const block = App.state().busyBlocks.find((x) => x.id === node.dataset.editBusy);
-          if (block) openBusyBlockModal(null, block);
+          if (block) openBusyBlockModal(null, block, node.dataset.busyDate || "");
         };
         node.addEventListener("click", open);
         node.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(e); } });

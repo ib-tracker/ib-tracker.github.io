@@ -262,6 +262,11 @@
       version: 1,
       tasks: [], subtasks: [], subjects: [], grades: [], sessions: [],
       busyBlocks: [], templates: [], savedFilters: [], courses: [],
+      /* Days when your repeating commitments simply don't happen — half-term,
+         a bank holiday, a strike. The opposite of a busy block: it REMOVES
+         time rather than claiming it, which is why it can't be one.
+         [{ id, title, start_date, end_date }] */
+      daysOff: [],
       gradeSnapshots: [],
       portals: [],        // [{ id, label, url }] — University quick-launch links
       scratchpad: "",     // legacy free-form quick notes (migrated into notes[])
@@ -313,7 +318,7 @@
     if (typeof out.scratchpad !== "string") out.scratchpad = "";
     out.focus = Object.assign(App.defaultFocus(), data.focus || {});
     if (!Array.isArray(out.focus.allowlist)) out.focus.allowlist = [];
-    for (const k of ["tasks","subtasks","subjects","grades","sessions","busyBlocks","templates","savedFilters","courses","gradeSnapshots","notes","portals"]) {
+    for (const k of ["tasks","subtasks","subjects","grades","sessions","busyBlocks","daysOff","templates","savedFilters","courses","gradeSnapshots","notes","portals"]) {
       if (!Array.isArray(out[k])) out[k] = [];
     }
     // Seed the two common portals once. Guarded by a flag, not by emptiness, so

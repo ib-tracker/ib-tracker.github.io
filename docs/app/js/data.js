@@ -223,6 +223,27 @@
     });
   };
 
+  /* Move a recurring task to its next due date without completing it.
+
+     Completing is the only other way to advance one, and that is a lie when
+     the week's review genuinely did not need doing: it awards XP, counts
+     towards the streak, and books the work as done. This just moves the date.
+     Its schedule is dropped too — those blocks were for the occurrence being
+     skipped, and leaving them would make the task look planned for days that
+     no longer relate to it. */
+  App.skipRecurrence = function (id) {
+    const t = App.taskById(id);
+    if (!t || !t.due_date || !t.recurring || t.recurring === "none") return null;
+    let next;
+    if (t.recurring === "daily") next = D.addDays(t.due_date, 1);
+    else if (t.recurring === "weekly") next = D.addDays(t.due_date, 7);
+    else if (t.recurring === "bi_weekly") next = D.addDays(t.due_date, 14);
+    else if (t.recurring === "monthly") next = D.addMonths(t.due_date, 1);
+    else return null;
+    App.updateTask(id, { due_date: next, scheduled_blocks: [] });
+    return next;
+  };
+
   // Toggle completion; spawns the next occurrence for recurring tasks.
   App.toggleTask = function (id) {
     const t = App.taskById(id);
@@ -595,6 +616,63 @@
     App.update((s) => { s.busyBlocks = s.busyBlocks.filter((x) => x.id !== id); });
   };
 
+  /* ---------- days off ----------
+     A day off cancels REPEATING commitments for a date. It is deliberately not
+     a busy block: a busy block claims time, and the whole point of a holiday is
+     that school isn't happening, so the day should come back to you free.
+
+     "Block Out Days" does the opposite and is still there for when you are away
+     — travel, mock exams — where the day genuinely isn't yours either. */
+  App.createDayOff = function (data) {
+    const d = Object.assign({ id: App.uid(), title: "", start_date: "", end_date: "", created_at: now() }, data);
+    if (d.end_date < d.start_date) d.end_date = d.start_date;
+    App.update((s) => s.daysOff.push(d));
+    return d;
+  };
+  App.deleteDayOff = function (id) {
+    App.update((s) => { s.daysOff = s.daysOff.filter((x) => x.id !== id); });
+  };
+  // The day-off entry covering a date, or null. Ranges are inclusive both ends.
+  App.dayOffOn = function (dateStr) {
+    return App.state().daysOff.find((d) => d.start_date <= dateStr && dateStr <= d.end_date) || null;
+  };
+
+  // One occurrence of one repeating block, cancelled. Kept on the block so it
+  // travels with it through export, edit and delete.
+  App.skipBusyOn = function (id, dateStr) {
+    App.update((s) => {
+      const b = s.busyBlocks.find((x) => x.id === id);
+      if (!b) return;
+      const skips = Array.isArray(b.skips) ? b.skips : [];
+      if (!skips.includes(dateStr)) b.skips = skips.concat([dateStr]).sort();
+    });
+  };
+  App.unskipBusyOn = function (id, dateStr) {
+    App.update((s) => {
+      const b = s.busyBlocks.find((x) => x.id === id);
+      if (!b || !Array.isArray(b.skips)) return;
+      b.skips = b.skips.filter((d) => d !== dateStr);
+    });
+  };
+  App.isBusySkipped = function (b, dateStr) {
+    return Array.isArray(b.skips) && b.skips.includes(dateStr);
+  };
+
+  // Which repeating blocks a date-off would actually clear — so the dialog can
+  // say what it is about to do instead of asking for blind confidence.
+  App.repeatsInRange = function (startDs, endDs) {
+    const hit = new Map();
+    for (let ds = startDs; ds <= endDs; ds = D.addDays(ds, 1)) {
+      for (const b of App.state().busyBlocks) {
+        if (b.kind !== "weekly" || hit.has(b.id)) continue;
+        if (b.from && ds < b.from) continue;
+        if (b.until && ds > b.until) continue;
+        if (App.busyDays(b).includes(D.dayOfWeek(ds))) hit.set(b.id, b);
+      }
+    }
+    return [...hit.values()];
+  };
+
   // The days a weekly block repeats on, tolerating the legacy single-dow shape.
   App.busyDays = function (b) {
     if (Array.isArray(b.days) && b.days.length) return b.days;
@@ -649,8 +727,14 @@
         travel_after: t.after,
       });
     };
+    const dayOff = !!App.dayOffOn(dateStr);
     for (const b of App.state().busyBlocks) {
       if (b.kind === "weekly") {
+        /* Only repeats are cancellable. A one-off block and a blocked-out range
+           were both put on a specific date on purpose, so a holiday has no
+           business erasing them. */
+        if (dayOff) continue;
+        if (App.isBusySkipped(b, dateStr)) continue;
         // a recurring commitment can be bounded to a term
         if (b.from && dateStr < b.from) continue;
         if (b.until && dateStr > b.until) continue;
@@ -1308,6 +1392,10 @@
         for (const k of ["from", "until"]) {
           if (!/^\d{4}-\d{2}-\d{2}$/.test(out[k] || "")) delete out[k];
         }
+        // Cancelled occurrences travel with the block.
+        const skips = (Array.isArray(out.skips) ? out.skips : [])
+          .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+        if (skips.length) out.skips = [...new Set(skips)].sort(); else delete out.skips;
       }
       out.travel_before = App.clamp(Math.round(Number(out.travel_before) || 0), 0, 240);
       out.travel_after = App.clamp(Math.round(Number(out.travel_after) || 0), 0, 240);
@@ -1406,6 +1494,17 @@
     return out;
   }
 
+  function legacyDayOff(d) {
+    const ds = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v || "") ? v : D.today());
+    const start = ds(d.start_date);
+    const end = ds(d.end_date);
+    return {
+      id: d.id || App.uid(), title: String(d.title || "Day off"),
+      start_date: start, end_date: end < start ? start : end,
+      created_at: d.created_at || now(),
+    };
+  }
+
   const ENTITY_MAP = {
     task: { key: "tasks", map: legacyTask, aliases: ["task", "tasks"] },
     subtask: { key: "subtasks", map: legacySubtask, aliases: ["subtask", "subtasks", "sub_task", "sub_tasks"] },
@@ -1413,6 +1512,7 @@
     grade: { key: "grades", map: legacyGrade, aliases: ["grade", "grades"] },
     session: { key: "sessions", map: legacySession, aliases: ["timersession", "timersessions", "timer_session", "timer_sessions", "session", "sessions"] },
     busy: { key: "busyBlocks", map: legacyBusy, aliases: ["busyblock", "busyblocks", "busy_block", "busy_blocks"] },
+    dayoff: { key: "daysOff", map: legacyDayOff, aliases: ["dayoff", "daysoff", "day_off", "days_off"] },
     template: { key: "templates", map: legacyTemplate, aliases: ["tasktemplate", "tasktemplates", "task_template", "task_templates", "template", "templates"] },
     filter: { key: "savedFilters", map: legacyFilter, aliases: ["savedfilter", "savedfilters", "saved_filter", "saved_filters", "filter", "filters"] },
     course: { key: "courses", map: legacyCourse, aliases: ["universitycourse", "universitycourses", "university_course", "university_courses", "course", "courses"] },

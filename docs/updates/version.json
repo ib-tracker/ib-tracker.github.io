@@ -1,15 +1,16 @@
 {
-  "version": "1.6.4",
-  "released": "2026-09-06",
+  "version": "1.7.0",
+  "released": "2026-09-08",
   "notes": [
-    "A long task description no longer breaks the Dashboard. One long description used to stretch every card on the page far off the right-hand side, including cards whose own descriptions were short.",
-    "Descriptions now show two lines and then trail off, instead of one, so there is enough there to recognise a task by. The full text is always in the edit window.",
-    "A pasted link or any long stretch of text with no spaces in it could break the layout too, on Timeline as well as the Dashboard. Long unbroken text now wraps instead of forcing the page wider than the window.",
-    "Titles are capped at 200 characters and descriptions at 5,000 when you save. Far longer than anything anyone writes, but it keeps a runaway paste from filling up the browser storage the whole app shares. Anything already saved is left as it is."
+    "Holidays. Repeating commitments can now be cancelled on particular days instead of running forever. There was no way to say \"school doesn't happen that week\", so a half-term still showed five days of school and the scheduler still planned around it.",
+    "Days Off, on the Scheduler, takes a date range and cancels everything that repeats into it — and hands that time back for studying. Mark a week of half-term and Auto-Schedule will start booking work at 9am instead of after school. The dialog names exactly which commitments it is about to clear before you commit.",
+    "To cancel a single occurrence, click the block on the day in question and choose \"Skip\". The rest of the repeat carries on untouched, so one cancelled football session doesn't affect any other week.",
+    "This is the opposite of Block Out Days, which is still there for when you are away and the day genuinely isn't yours — travel, exams. Days Off gives time back; Block Out Days takes it away. Each dialog now says which way it runs.",
+    "Recurring tasks get \"Skip this one\", which moves the task to its next due date without completing it — so it earns no XP and doesn't count towards your streak as work you did."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.6.4.zip",
-    "sha256": "17226f05d86fbf4c7e7895c3c51303d2b8cc3fbedc11f6db87dbf50ebe0ec047",
-    "size": 243509
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.7.0.zip",
+    "sha256": "fa5689dbca127cd544c252a1ecca93ece284b75b9d3d66c85b3b847a4a75da6c",
+    "size": 246548
   }
 }
