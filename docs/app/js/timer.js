@@ -93,6 +93,10 @@
         estimatedMinutes: estimatedMinutes || 0,
         startEpoch: Date.now(), pausedAccumSec: 0, paused: false,
         minimized: false, startISO: new Date().toISOString(),
+        /* Sessions banked mid-sitting, so Cancel can take them back out
+           again. Without this the sitting has no identity once a checkpoint
+           has written its minutes away into the shared sessions list. */
+        loggedSessionIds: [],
       };
     });
   };
@@ -150,6 +154,12 @@
 
   /* Bank what has been worked so far and keep the clock running.
 
+     NOT dead code, despite having no button: the full-screen controls are
+     Pause, Cancel, Log & stop and Finish, and a fifth crowded them. The
+     mechanism is kept whole so it can be put back behind a shortcut or a
+     menu without being rebuilt — and T.cancel depends on loggedSessionIds,
+     which only this writes.
+
      Stop already logged the time, but it also ended the sitting, so a long
      stretch on one task could not be recorded in pieces: you either stopped
      — ending it — or carried the whole lot in one lump that existed nowhere
@@ -169,7 +179,7 @@
     }
     const mins = Math.round(elapsed / 60);
     const task = t.taskId ? App.taskById(t.taskId) : null;
-    App.logSession({
+    const sess = App.logSession({
       task_id: t.taskId || "",
       task_title: t.taskTitle || "Study Session",
       subject_name: task ? task.subject_name || "" : "",
@@ -180,6 +190,7 @@
     });
     App.update((s) => {
       if (!s.timer) return;
+      if (sess && sess.id) s.timer.loggedSessionIds = (s.timer.loggedSessionIds || []).concat([sess.id]);
       s.timer.startEpoch = Date.now();
       s.timer.pausedAccumSec = 0;
       s.timer.startISO = new Date().toISOString();
@@ -188,6 +199,50 @@
     });
     App.sfx("session");
     App.toast(`${App.fmtMinutes(mins)} logged — timer still running`);
+  };
+
+  /* Throw the sitting away: nothing logged, and anything already banked
+     during it taken back out.
+
+     "Cancel" has to mean the sitting never happened, or it is just Stop with a
+     worse name. So it deletes the sessions this sitting wrote as well as
+     discarding the clock — a checkpoint left behind would be a sitting you
+     cancelled still showing up in your totals and on the task's progress bar.
+
+     XP and streaks are derived from the sessions list rather than stored, so
+     removing the rows is enough to unwind those too. */
+  T.cancel = async function () {
+    const t = App.state().timer;
+    if (!t) return;
+    const elapsed = T.elapsedSec(t);
+    const ids = t.loggedSessionIds || [];
+    const banked = App.state().sessions
+      .filter((x) => ids.includes(x.id))
+      .reduce((n, x) => n + App.sessionMinutes(x), 0);
+    const onClock = Math.round(elapsed / 60);
+
+    const parts = [];
+    if (onClock) parts.push(`${App.fmtMinutes(onClock)} on the clock`);
+    if (banked) parts.push(`${App.fmtMinutes(banked)} already logged this sitting`);
+    const ok = await App.ui.confirm({
+      title: "Cancel this session?",
+      message: parts.length
+        ? `${parts.join(" and ")} will be discarded. This can't be undone.`
+        : "The timer will be discarded without logging anything.",
+      confirmLabel: "Discard", danger: true,
+    });
+    if (!ok) return;
+
+    const written = App.update((s) => {
+      if (ids.length) {
+        const drop = new Set(ids);
+        s.sessions = s.sessions.filter((x) => !drop.has(x.id));
+      }
+      s.timer = null;
+    });
+    if (written === false) return;   // read-only refused it; don't claim otherwise
+    T.setFullscreen(false);
+    App.toast("Session cancelled — nothing logged");
   };
 
   T.toggleMinimize = function () {
@@ -266,8 +321,8 @@
             ${t.paused
               ? `<button class="btn btn-primary btn-lg" data-ft-resume>${App.icon("play")} Resume</button>`
               : `<button class="btn btn-outline btn-lg" data-ft-pause>${App.icon("pause")} Pause</button>`}
-            ${t.taskId ? `<button class="btn btn-outline btn-lg" data-ft-log
-                    title="Bank the time so far and keep going">${App.icon("save")} Log progress</button>` : ""}
+            <button class="btn btn-outline btn-lg" data-ft-cancel
+                    title="Discard this session without logging it">${App.icon("x")} Cancel</button>
             <button class="btn btn-outline btn-lg" data-ft-stop>${App.icon("square")} Log &amp; stop</button>
             ${t.taskId ? `<button class="btn btn-good btn-lg" data-ft-finish>${App.icon("check")} Finish</button>` : ""}
           </div>
@@ -276,7 +331,7 @@
       qf("[data-ft-exit]").addEventListener("click", () => T.setFullscreen(false));
       if (qf("[data-ft-pause]")) qf("[data-ft-pause]").addEventListener("click", () => T.pause());
       if (qf("[data-ft-resume]")) qf("[data-ft-resume]").addEventListener("click", () => T.resume());
-      if (qf("[data-ft-log]")) qf("[data-ft-log]").addEventListener("click", () => T.logProgress());
+      if (qf("[data-ft-cancel]")) qf("[data-ft-cancel]").addEventListener("click", () => T.cancel());
       if (qf("[data-ft-stop]")) qf("[data-ft-stop]").addEventListener("click", () => { T.setFullscreen(false); T.stop(false); });
       if (qf("[data-ft-finish]")) qf("[data-ft-finish]").addEventListener("click", () => { T.setFullscreen(false); T.stop(true); });
       return;
@@ -311,8 +366,8 @@
           ${t.paused
             ? `<button class="btn btn-primary btn-sm" data-ft-resume>${App.icon("play")} Resume</button>`
             : `<button class="btn btn-outline btn-sm" data-ft-pause>${App.icon("pause")} Pause</button>`}
-          ${t.taskId ? `<button class="btn btn-outline btn-sm" data-ft-log
-                  title="Log progress and keep going" aria-label="Log progress and keep going">${App.icon("save")}</button>` : ""}
+          <button class="btn btn-outline btn-sm" data-ft-cancel
+                  title="Discard this session without logging it" aria-label="Cancel session">${App.icon("x")}</button>
           <button class="btn btn-outline btn-sm" data-ft-stop>${App.icon("square")} Log &amp; stop</button>
           ${t.taskId ? `<button class="btn btn-good btn-sm" data-ft-finish>${App.icon("check")} Finish</button>` : ""}
         </div>
@@ -323,7 +378,7 @@
     if (q("[data-ft-full]")) q("[data-ft-full]").addEventListener("click", () => T.setFullscreen(true));
     if (q("[data-ft-pause]")) q("[data-ft-pause]").addEventListener("click", () => T.pause());
     if (q("[data-ft-resume]")) q("[data-ft-resume]").addEventListener("click", () => T.resume());
-    if (q("[data-ft-log]")) q("[data-ft-log]").addEventListener("click", () => T.logProgress());
+    if (q("[data-ft-cancel]")) q("[data-ft-cancel]").addEventListener("click", () => T.cancel());
     if (q("[data-ft-stop]")) q("[data-ft-stop]").addEventListener("click", () => T.stop(false));
     if (q("[data-ft-finish]")) q("[data-ft-finish]").addEventListener("click", () => T.stop(true));
   };

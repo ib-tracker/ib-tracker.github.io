@@ -1,16 +1,14 @@
 {
-  "version": "1.7.0",
-  "released": "2026-09-08",
+  "version": "1.7.1",
+  "released": "2026-09-20",
   "notes": [
-    "Holidays. Repeating commitments can now be cancelled on particular days instead of running forever. There was no way to say \"school doesn't happen that week\", so a half-term still showed five days of school and the scheduler still planned around it.",
-    "Days Off, on the Scheduler, takes a date range and cancels everything that repeats into it — and hands that time back for studying. Mark a week of half-term and Auto-Schedule will start booking work at 9am instead of after school. The dialog names exactly which commitments it is about to clear before you commit.",
-    "To cancel a single occurrence, click the block on the day in question and choose \"Skip\". The rest of the repeat carries on untouched, so one cancelled football session doesn't affect any other week.",
-    "This is the opposite of Block Out Days, which is still there for when you are away and the day genuinely isn't yours — travel, exams. Days Off gives time back; Block Out Days takes it away. Each dialog now says which way it runs.",
-    "Recurring tasks get \"Skip this one\", which moves the task to its next due date without completing it — so it earns no XP and doesn't count towards your streak as work you did."
+    "The full-screen task timer now has Pause, Cancel, Log & stop and Finish.",
+    "Cancel throws the session away. Nothing is logged, and if any time was banked part-way through that sitting it is taken back out too, so a cancelled session leaves no trace on your totals or on the task's progress. It asks first and tells you how much is about to go, because there is no undo.",
+    "The separate \"Log progress\" button is gone. Stopping still logs your time exactly as before — that never depended on it."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.7.0.zip",
-    "sha256": "fa5689dbca127cd544c252a1ecca93ece284b75b9d3d66c85b3b847a4a75da6c",
-    "size": 246548
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.7.1.zip",
+    "sha256": "e70f86ae70364c2080e5481396c679e16b99cf2e64b4b3c7a80e58e368caf696",
+    "size": 247402
   }
 }
