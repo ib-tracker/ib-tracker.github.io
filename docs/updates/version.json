@@ -1,14 +1,16 @@
 {
-  "version": "1.7.1",
-  "released": "2026-09-20",
+  "version": "1.7.3",
+  "released": "2026-09-22",
   "notes": [
-    "The full-screen task timer now has Pause, Cancel, Log & stop and Finish.",
-    "Cancel throws the session away. Nothing is logged, and if any time was banked part-way through that sitting it is taken back out too, so a cancelled session leaves no trace on your totals or on the task's progress. It asks first and tells you how much is about to go, because there is no undo.",
-    "The separate \"Log progress\" button is gone. Stopping still logs your time exactly as before — that never depended on it."
+    "Estimated vs. actual in Analytics now compares whole tasks, not individual sittings. It used to plot every study session as its own dot, so a three-hour task done in three sittings showed up as three dots that each looked like you had finished early, and dragged your estimate accuracy down to around 60% for a task you had estimated exactly right. Now each finished task is one dot: its estimate against every minute you logged on it. Tasks don't appear until they're done, and ones you ticked off without timing are left out, since there's nothing to compare.",
+    "XP had the same problem and is fixed the same way. Working on a task over several sittings could earn nothing for a later sitting, because it was measured against only what was left of the estimate. Now the overrun rule looks at the task's total, and the good-estimate bonus is awarded once, when the task is finished. Your XP is recalculated from your history, so your total may move a little.",
+    "The workload forecast now shows the time still to do on each task rather than its full estimate, so it agrees with the scheduler about how busy a day is once you've started something.",
+    "Loading the sample data or restoring a backup no longer sends you back through first-run setup the next time you open the app.",
+    "On phones, pages use the full width of the screen again. About a quarter of it had been kept empty on the right to stay clear of the coach button."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.7.1.zip",
-    "sha256": "e70f86ae70364c2080e5481396c679e16b99cf2e64b4b3c7a80e58e368caf696",
-    "size": 247402
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.7.3.zip",
+    "sha256": "9c7db70fdbb63a07a0cba05b1a3783ca52452bbcb39aa9f2cd966075fada086a",
+    "size": 249537
   }
 }

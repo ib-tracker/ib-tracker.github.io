@@ -39,10 +39,26 @@
     return count;
   }
 
-  function estPairs(sessions) {
-    return sessions
-      .filter((s) => (s.estimated_minutes || 0) > 0)
-      .map((s) => ({ x: s.estimated_minutes, y: App.sessionMinutes(s), label: s.task_title || "Session" }))
+  /* One point per COMPLETED task: its estimate against every minute logged on
+     it, whenever those minutes were logged.
+
+     It used to be one point per session. A long task is done in several
+     sittings, and each sitting carries the target it started with — what was
+     left of the estimate — so every partial sitting plotted as a complete
+     attempt that finished early. Three honest hours on a three-hour task came
+     out as three points and 61% accuracy.
+
+     The total deliberately ignores the date filter: a task finished this
+     month that you started in June took the June hours too. Only the
+     completion date decides whether the task is in range.
+
+     Unfinished tasks have no actual yet, and a task ticked off without ever
+     being timed has no actual at all — plotting it at zero would claim a
+     three-hour task took no time. */
+  function estPairs(completedTasks) {
+    return completedTasks
+      .filter((t) => (t.estimated_minutes || 0) > 0)
+      .map((t) => ({ x: t.estimated_minutes, y: App.taskMinutesLogged(t.id), label: t.title || "Task" }))
       .filter((p) => p.y > 0);
   }
 
@@ -58,9 +74,16 @@
     const out = [];
     for (let i = 0; i < 30; i++) {
       const ds = D.addDays(today, i);
+      /* What is still to do, not the original estimate — the same figure the
+         scheduler plans with. Since 1.6.0 the scheduler books only the
+         remainder of a part-done task, and this kept counting the whole
+         thing, so the two disagreed about how busy the same day was. A task
+         with no estimate still contributes nothing: taskPlanMinutes would
+         default it to 30, and inventing work for a forecast is worse than
+         leaving it out. */
       const mins = s.tasks
         .filter((t) => !t.completed && t.due_date === ds)
-        .reduce((sum, t) => sum + (t.estimated_minutes || 0), 0);
+        .reduce((sum, t) => sum + ((t.estimated_minutes || 0) > 0 ? App.taskPlanMinutes(t) : 0), 0);
       const dayName = App.DAY_KEYS[(D.dayOfWeek(ds) + 6) % 7];
       out.push({
         label: D.fmtShort(ds),
@@ -200,7 +223,7 @@
     render() {
       const sessions = sessionsInRange();
       const completed = completedInRange();
-      const pairs = estPairs(sessions);
+      const pairs = estPairs(completed);
       const acc = accuracy(pairs);
       const focusMin = sessions.reduce((s, x) => s + App.sessionMinutes(x), 0);
       const rangeLabel = range ? `last ${range} days` : "all time";
@@ -230,7 +253,7 @@
           </div>
 
           <div class="stack">
-            ${C.card("forecast", "Workload forecast — next 30 days", "Estimated task time due each day vs. your available study hours")}
+            ${C.card("forecast", "Workload forecast — next 30 days", "Time still to do on tasks due each day vs. your available study hours")}
             ${C.card("daily-time", "Study time per day", "Total time you logged each day", `
               <div class="seg-toggle" style="padding:2px">
                 <button class="${dailyDays === 7 ? "active" : ""}" data-daily-days="7" style="padding:3px 10px;font-size:11.5px">7 days</button>
@@ -238,7 +261,7 @@
               </div>`)}
             ${C.card("subject-time", "Time by subject", "Where your logged study time goes · " + rangeLabel)}
             ${C.card("completions", "Tasks completed per day", rangeLabel)}
-            ${C.card("est-actual", "Estimated vs. actual session length", "Each dot is a logged session — above the line took longer than planned · " + rangeLabel)}
+            ${C.card("est-actual", "Estimated vs. actual task length", "Each dot is a finished task, counting every session on it — above the line took longer than planned · " + rangeLabel)}
           </div>
         </div>`;
     },
@@ -286,10 +309,10 @@
         (body) => C.line(body, dc, { integer: true, valueLabel: "Completed", labelEvery: Math.max(1, Math.round(dc.length / 6)), emptyMsg: "No completions yet" }),
         { columns: ["Day", "Completed"], rows: dc.filter((d) => d.value).map((d) => [d.tipTitle, d.value]) });
 
-      const pairs = estPairs(sessions);
+      const pairs = estPairs(completed);
       C.mountCard(el, "est-actual",
-        (body) => C.scatter(body, pairs, { emptyMsg: "Sessions with time estimates will appear here" }),
-        { columns: ["Session", "Estimated", "Actual"], rows: pairs.map((p) => [p.label, App.fmtMinutes(p.x), App.fmtMinutes(p.y)]) });
+        (body) => C.scatter(body, pairs, { emptyMsg: "Finished tasks that had an estimate and were timed will appear here" }),
+        { columns: ["Task", "Estimated", "Actual"], rows: pairs.map((p) => [p.label, App.fmtMinutes(p.x), App.fmtMinutes(p.y)]) });
     },
   };
 })();

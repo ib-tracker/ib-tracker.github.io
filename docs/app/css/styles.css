@@ -1076,10 +1076,17 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
    own max-width keeps content clear of it, but once the sidebar collapses the
    content column runs the full width and anything right-aligned — the values in
    University requirements, for one — scrolls underneath and is unreadable.
-   Reserving its footprint costs ~6% of a narrow window and is the only way the
-   text is guaranteed legible; the button is fixed, so page-end padding alone
-   protects the bottom of the document and nothing else. */
-@media (max-width: 900px) {
+   Reserving its footprint is the only way the text is guaranteed legible at
+   every scroll position; the button is fixed, so page-end padding alone
+   protects the bottom of the document and nothing else.
+
+   Phones are the exception. 84px is ~9% at 900px but 22% of a 375px screen —
+   a quarter of the width given up to a 48px button that only ever covers one
+   corner. There the ordinary mobile trade applies instead: content may pass
+   under the button while scrolling, and the page's 96px bottom padding
+   (more than the button's 22px + 48px) guarantees the last thing on every
+   page can always be scrolled clear of it. */
+@media (min-width: 561px) and (max-width: 900px) {
   .page { padding-right: 84px; }
 }
 @media (max-width: 900px) { .coach-wrap { padding: 0 14px; } }

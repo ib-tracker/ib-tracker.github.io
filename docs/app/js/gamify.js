@@ -5,9 +5,13 @@
    - Complete a task: +10 base, +5 if done on/before its due date,
      +5 High / +10 Critical priority.
    - Focused study: +1 XP per logged minute, scaled by a streak multiplier
-     (x1.25 at a 7-day streak, x1.5 at 15+); a session that runs to 2x or more
-     of its planned time earns no minute-XP; +10 when a session lands within
-     ±20% of the time you planned. */
+     (x1.25 at a 7-day streak, x1.5 at 15+).
+   - Estimates are judged per TASK, not per sitting: a sitting earns no
+     minute-XP once the task's running total reaches 2x its estimate, and
+     +10 is awarded once, on completion, when the task's total time lands
+     within ±20% of the estimate.
+   - A session with no task (free focus, a planned-length study session) is
+     judged on its own, since it is a single sitting by definition. */
 (function () {
   "use strict";
   const App = window.App;
@@ -50,6 +54,37 @@
     const minuteXP = Math.round(actual * mult);
     const estimateBonus = (est > 0 && Math.abs(actual - est) <= est * ESTIMATE_TOLERANCE) ? ESTIMATE_BONUS : 0;
     return { minuteXP, estimateBonus, penalised: false };
+  }
+
+  /* Why estimates moved from the sitting to the task.
+
+     A sitting's estimated_minutes is the target it STARTED with, which for a
+     long task done in pieces is only what was left. Judged per sitting, the
+     second 25-minute sitting on a 60-minute task was held against a 10-minute
+     remainder, crossed 2x, and earned nothing — for 75 minutes of work on a
+     60-minute task. The bonus had the mirror-image flaw: no partial sitting
+     ever lands within 20% of anything.
+
+     The overrun test uses the running total INCLUDING the sitting. For a task
+     done in one sitting that is exactly the old rule, so the guard against
+     padding a timer is as strong as it was — five hours on a one-hour task
+     still earns nothing. Only multi-sitting tasks are judged differently. */
+  function taskSessionXP(sess, task, runningTotal, streakOnDate) {
+    const actual = App.sessionMinutes(sess);
+    if (actual <= 0) return { minuteXP: 0, estimateBonus: 0, penalised: false };
+    // A task that has since been deleted leaves nothing to judge against, and
+    // falling back to the sitting's own target would reintroduce the bug.
+    const est = task ? task.estimated_minutes || 0 : 0;
+    if (est > 0 && runningTotal >= est * OVERRUN_FACTOR) return { minuteXP: 0, estimateBonus: 0, penalised: true };
+    const mult = streakMultiplier(streakOnDate(D.isoToDateStr(sess.start_time)));
+    return { minuteXP: Math.round(actual * mult), estimateBonus: 0, penalised: false };
+  }
+
+  // The one-off +10, judged on everything logged against a finished task.
+  function taskEstimateBonus(t) {
+    const est = t.estimated_minutes || 0;
+    const total = App.taskMinutesLogged(t.id);
+    return est > 0 && total > 0 && Math.abs(total - est) <= est * ESTIMATE_TOLERANCE ? ESTIMATE_BONUS : 0;
   }
 
   // minute-XP for one session ignoring streak/bonus — kept for any external use
@@ -119,12 +154,35 @@
     for (const t of s.tasks) {
       if (t.completed && inRange(t.completed_at ? D.isoToDateStr(t.completed_at) : null)) {
         taskXP += taskXPFor(t);
+        // Lands on the completion date, so a ranged report counts it in the
+        // period the task was actually finished.
+        bonusXP += taskEstimateBonus(t);
         tasksCompleted++;
       }
     }
+
+    /* Each task's running total, sitting by sitting in the order they
+       happened. Built over ALL sessions rather than just the range: a sitting
+       in this week is judged against the hours already put in before it. */
+    const taskById = new Map(s.tasks.map((t) => [t.id, t]));
+    const byTask = new Map();
+    for (const x of s.sessions) {
+      if (!x.task_id) continue;
+      if (!byTask.has(x.task_id)) byTask.set(x.task_id, []);
+      byTask.get(x.task_id).push(x);
+    }
+    const runningTotal = new Map();
+    for (const list of byTask.values()) {
+      list.sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
+      let run = 0;
+      for (const x of list) { run += App.sessionMinutes(x); runningTotal.set(x, run); }
+    }
+
     for (const sess of s.sessions) {
       if (!inRange(D.isoToDateStr(sess.start_time))) continue;
-      const r = sessionXPFor(sess, streakOnDate);
+      const r = sess.task_id
+        ? taskSessionXP(sess, taskById.get(sess.task_id), runningTotal.get(sess) || 0, streakOnDate)
+        : sessionXPFor(sess, streakOnDate);
       timeXP += r.minuteXP;
       bonusXP += r.estimateBonus;
       if (r.penalised) penalisedSessions++;

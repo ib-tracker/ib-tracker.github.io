@@ -1615,7 +1615,9 @@
       fresh.settings = Object.assign(App.defaultSettings(), incoming.settings);
       // backups never contain the API key — keep the one on this machine
       fresh.settings.ai_api_key = App.state().settings.ai_api_key || "";
-      fresh.ui = { welcomed: true };
+      // A backup is somebody's real, set-up data; restoring it must not send
+      // them back through first-run setup. Same loss as sample data had.
+      fresh.ui = { welcomed: true, setup_done: true };
       if (coachMsgs) fresh.coach = { messages: coachMsgs };
       if (scratchpad !== null) fresh.scratchpad = scratchpad;
       if (snapshots) fresh.gradeSnapshots = snapshots;
@@ -1727,6 +1729,12 @@
     const subjects = ["Math AA HL", "Physics HL", "Economics HL", "English A SL", "Spanish B SL", "Chemistry SL"];
     const data = App.emptyData();
     data.ui.welcomed = true;
+    /* Sample data is a finished setup: six subjects, grades and an exam date
+       are already in it. Without this the flag was lost in replaceState —
+       which carries only the licence keys across — so loading the demo from
+       Settings dropped a user who had long since set up back into the
+       first-run "Your subjects" wizard on their next launch. */
+    data.ui.setup_done = true;
     data.subjects = subjects.map((name) => ({ id: App.uid(), name, level: App.parseSubjectLevel(name).level, created_at: now() }));
     data.grades = [
       ["Math AA HL", 6, 7], ["Physics HL", 5, 6], ["Economics HL", 6, 7],
