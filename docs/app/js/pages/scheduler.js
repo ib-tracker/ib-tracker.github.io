@@ -495,20 +495,60 @@
     });
   }
 
+  /* Placing a task from the Unscheduled list asks how much of it to put
+     there, defaulting to everything still unplaced. Place two hours of a
+     six-hour task and it stays in the list with four hours to go; each later
+     placement adds a block rather than replacing the first. Moving a block
+     that is already on the calendar keeps its length and doesn't ask. */
+  function askPlacement(taskId, dateStr, minute) {
+    const task = App.taskById(taskId);
+    if (!task) return;
+    const left = App.minutesToSchedule(task);
+    const step = 15;
+    const def = Math.max(step, left);
+    UI.openModal({
+      title: "How long?",
+      size: "sm",
+      body: `
+        <p style="font-weight:600;font-size:13.5px" class="mb-2">${esc(task.title)}</p>
+        <p class="muted small mb-3">${D.fmtShort(dateStr)} · ${App.fmtMinutes(left)} left to schedule</p>
+        <div class="field"><label>Duration (min)</label>
+          <input class="input" type="number" name="duration" min="${step}" step="${step}" value="${def}"></div>`,
+      foot: `
+        <button class="btn btn-outline" data-close>Cancel</button>
+        <button class="btn btn-primary" data-place>Schedule</button>`,
+      onMount(el, handle) {
+        const place = () => {
+          const mins = Math.round(Number(UI.readForm(el).duration) || 0);
+          if (mins < 1) { App.toast("Enter how many minutes", "error"); return; }
+          const res = App.scheduleTaskAt(taskId, dateStr, minute, { duration: mins, append: true });
+          if (!res.ok) { App.toast(res.reason, "error"); return; }
+          selectedTaskId = null;
+          handle.close();
+          const rest = App.minutesToSchedule(App.taskById(taskId));
+          App.toast(rest > 0 ? `Scheduled · ${App.fmtMinutes(rest)} still to place` : "Task scheduled");
+        };
+        el.querySelector("[data-place]").addEventListener("click", place);
+        el.querySelector("[name=duration]").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); place(); }
+        });
+      },
+    });
+  }
+
   /* ---------- drop handling ---------- */
   function dropOn(dateStr, minute) {
     if (!drag) return;
-    const res = App.scheduleTaskAt(drag.taskId, dateStr, minute, drag.blockId ? { moveBlockId: drag.blockId, duration: drag.duration } : {});
-    if (!res.ok) App.toast(res.reason, "error");
+    const d = drag;
     drag = null;
+    if (!d.blockId) { askPlacement(d.taskId, dateStr, minute); return; }
+    const res = App.scheduleTaskAt(d.taskId, dateStr, minute, { moveBlockId: d.blockId, duration: d.duration });
+    if (!res.ok) App.toast(res.reason, "error");
     selectedTaskId = null;
   }
   function clickSlot(dateStr, minute) {
     if (!selectedTaskId) return;
-    const res = App.scheduleTaskAt(selectedTaskId, dateStr, minute, {});
-    if (!res.ok) { App.toast(res.reason, "error"); return; }
-    selectedTaskId = null;
-    App.toast("Task scheduled");
+    askPlacement(selectedTaskId, dateStr, minute);
   }
 
   /* ---------- week view ---------- */
@@ -712,6 +752,7 @@
                       ${t.estimated_minutes ? `<span class="t-mins">${App.fmtMinutes(t.estimated_minutes)}</span>` : ""}
                       ${t.due_date ? `<span class="t-mins">due ${D.fmtShort(t.due_date)}</span>` : ""}
                     </div>
+                    ${App.liveBlocks(t).length ? `<div class="u-left">${App.fmtMinutes(App.minutesToSchedule(t))} left to schedule</div>` : ""}
                   </div>`;
                 }).join("")}
                 ${!unsched.length ? `<p class="muted small" style="text-align:center;padding:14px 4px">All tasks scheduled 🎉</p>` : ""}

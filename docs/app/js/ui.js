@@ -208,6 +208,9 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modalStack.length) {
+      // Claimed, so the full-screen timer's own Escape doesn't also fire and
+      // close itself behind the dialog.
+      e.preventDefault();
       modalStack[modalStack.length - 1].close();
     }
   });

@@ -1,16 +1,16 @@
 {
-  "version": "1.7.3",
-  "released": "2026-09-22",
+  "version": "1.8.0",
+  "released": "2026-10-13",
   "notes": [
-    "Estimated vs. actual in Analytics now compares whole tasks, not individual sittings. It used to plot every study session as its own dot, so a three-hour task done in three sittings showed up as three dots that each looked like you had finished early, and dragged your estimate accuracy down to around 60% for a task you had estimated exactly right. Now each finished task is one dot: its estimate against every minute you logged on it. Tasks don't appear until they're done, and ones you ticked off without timing are left out, since there's nothing to compare.",
-    "XP had the same problem and is fixed the same way. Working on a task over several sittings could earn nothing for a later sitting, because it was measured against only what was left of the estimate. Now the overrun rule looks at the task's total, and the good-estimate bonus is awarded once, when the task is finished. Your XP is recalculated from your history, so your total may move a little.",
-    "The workload forecast now shows the time still to do on each task rather than its full estimate, so it agrees with the scheduler about how busy a day is once you've started something.",
-    "Loading the sample data or restoring a backup no longer sends you back through first-run setup the next time you open the app.",
-    "On phones, pages use the full width of the screen again. About a quarter of it had been kept empty on the right to stay clear of the coach button."
+    "Forget to stop the timer? It now checks in. Fifteen minutes past your target (or every hour if there isn't one), a \"Still studying?\" prompt appears. Answer yes and it carries on; if nobody answers within ten minutes it pauses itself at the moment it asked, so the time you weren't there is never logged. This covers the task timer and Study Session, pomodoro included.",
+    "A timer left running when you closed the app is now found paused at its check-in with your real minutes kept, instead of being thrown away the next morning.",
+    "Study Session now logs only the time actually counted. Pauses and pomodoro breaks used to be logged as study.",
+    "In the Scheduler you can place part of a task. Drop it on a day and you're asked how long; put two hours of a six-hour task on Monday and it stays in the Unscheduled list with four hours to go. Auto-Schedule keeps the blocks you placed and plans only the rest.",
+    "In full-screen timer, Cancel works again (its confirmation was opening hidden behind the timer), and Pause no longer makes the screen flash."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.7.3.zip",
-    "sha256": "9c7db70fdbb63a07a0cba05b1a3783ca52452bbcb39aa9f2cd966075fada086a",
-    "size": 249537
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.8.0.zip",
+    "sha256": "cf4a7cda42a79a4da64260abebd7971cbca89dd13988b0e5489c18a821b4bf4e",
+    "size": 253132
   }
 }

@@ -779,9 +779,21 @@
     return (task.scheduled_blocks || []).filter((b) => !App.isBlockStale(task, b, today));
   };
 
+  /* How much of the task is still unplaced: what is left to do, minus what
+     live blocks already cover.
+
+     "Scheduled" used to mean "has any live block at all", so placing two
+     hours of a six-hour task by hand took the whole task off the Unscheduled
+     list and out of Auto-Schedule, and the other four hours were planned
+     nowhere. Now the task stays until its hours are covered. */
+  App.minutesToSchedule = function (task, today) {
+    const placed = App.liveBlocks(task, today).reduce((n, b) => n + (Number(b.duration) || 0), 0);
+    return Math.max(0, App.taskPlanMinutes(task) - placed);
+  };
+
   // The one question the scheduler actually wants answered.
   App.needsScheduling = function (task, today) {
-    return !task.completed && App.liveBlocks(task, today).length === 0;
+    return !task.completed && App.minutesToSchedule(task, today) > 0;
   };
 
   App.scheduledBlocksOn = function (dateStr) {
@@ -847,6 +859,9 @@
         const blk = task.scheduled_blocks.find((b) => b.id === opts.moveBlockId);
         if (blk) { blk.date = dateStr; blk.start_min = attempt; blk.duration = duration; }
         else task.scheduled_blocks.push({ id: App.uid(), date: dateStr, start_min: attempt, duration });
+      } else if (opts.append) {
+        // Another piece of a task already partly placed: the earlier blocks stay.
+        task.scheduled_blocks.push({ id: App.uid(), date: dateStr, start_min: attempt, duration });
       } else {
         // Manual placement replaces the live plan but leaves stale blocks be,
         // so dropping a task onto a new day does not erase last week's record.
@@ -967,8 +982,10 @@
          altogether — overdue work needs the earliest slot going, not none. */
       const deadline = task.due_date && task.due_date >= todayStr ? task.due_date : "";
 
-      // Only what is left: time already logged is not planned again.
-      const totalDur = App.taskPlanMinutes(task);
+      /* Only what is left: time already logged is not planned again, and
+         neither is time the task already has blocks for — placed by hand or
+         by an earlier run. Those blocks are kept exactly where they are. */
+      const totalDur = App.minutesToSchedule(task);
       const maxSession = task.max_session_minutes || maxSessionGlobal;
       const chunks = [];
       let remaining = totalDur;
@@ -1044,9 +1061,8 @@
         for (const r of results) {
           const t = st2.tasks.find((x) => x.id === r.taskId);
           if (t) {
-            // Keep what is already history; replace only the live plan.
-            const kept = (t.scheduled_blocks || []).filter((b) => App.isBlockStale(t, b));
-            t.scheduled_blocks = kept.concat(r.blocks);
+            // Only the remainder was planned, so every existing block stays.
+            t.scheduled_blocks = (t.scheduled_blocks || []).concat(r.blocks);
             t.updated_at = now();
           }
         }

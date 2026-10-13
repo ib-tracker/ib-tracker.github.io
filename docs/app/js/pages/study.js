@@ -27,11 +27,20 @@
   function phaseInfo(ss) {
     const p = ss.pomo;
     const total = (p.phase === "focus" ? p.focusMin : p.breakMin) * 60;
-    const elapsed = Math.max(0, Math.floor((Date.now() - p.phaseStartEpoch) / 1000));
+    const elapsed = isFrozen(ss)
+      ? Math.round(total - p.frozenRemainingSec)
+      : Math.max(0, Math.floor((Date.now() - p.phaseStartEpoch) / 1000));
     return { phase: p.phase, total, elapsed, remaining: Math.max(0, total - elapsed) };
   }
 
   const chime = (up) => App.chime(up);
+
+  /* A pomodoro stopped by a missed check-in (timer.js). Pomodoro otherwise has
+     no pause — its rounds run on their own — so a frozen one keeps what was
+     left of its focus round and picks up from there on Resume. */
+  function isFrozen(ss) {
+    return !!(ss && ss.pomo && ss.paused && ss.pomo.frozenRemainingSec != null);
+  }
 
   // advance focus<->break; freezes the study clock during breaks so logged time is focus-only
   function advancePhase(ss) {
@@ -111,6 +120,10 @@
     App.update((s) => {
       const ss = s.studySession;
       if (!ss || !ss.paused) return;
+      if (ss.pomo && ss.pomo.frozenRemainingSec != null) {
+        ss.pomo.phaseStartEpoch = Date.now() - (ss.pomo.focusMin * 60 - ss.pomo.frozenRemainingSec) * 1000;
+        delete ss.pomo.frozenRemainingSec;
+      }
       ss.startEpoch = Date.now();
       ss.taskStartEpoch = Date.now();
       ss.paused = false;
@@ -214,7 +227,10 @@
       subject_name: sameSubject ? queueTasks[0].subject_name || "" : "",
       estimated_minutes: ss.pomo ? 0 : ss.duration,
       overtime_minutes: ss.pomo ? 0 : actualMin - ss.duration,
-      start_time: ss.startISO,
+      /* From the counted elapsed, not startISO — the same fix the task timer
+         had. startISO is wall-clock, so every pause, every pomodoro break and
+         any time after a missed check-in was logged as study regardless. */
+      start_time: new Date(Date.now() - elapsed * 1000).toISOString(),
       end_time: new Date().toISOString(),
     });
     reset();
@@ -307,7 +323,7 @@
             </svg>
             <div class="ring-center">
               <span class="time" data-ss-time>${App.fmtClock(pi.remaining)}</span>
-              <span class="sub" data-ss-sub>${isBreak ? "break" : "focus"}${ss.pomo.cycles ? " · round " + (ss.pomo.cycles + 1) : ""}</span>
+              <span class="sub" data-ss-sub>${isFrozen(ss) ? "paused" : isBreak ? "break" : "focus"}${ss.pomo.cycles ? " · round " + (ss.pomo.cycles + 1) : ""}</span>
               ${!isBreak && currentTask ? `<span class="now-task">▶ ${esc(currentTask.title)}</span>` : ""}
               ${isBreak ? `<span class="now-task">☕ take a breather</span>` : ""}
             </div>
@@ -399,7 +415,7 @@
 
       return `
         <div class="page narrow">
-          ${UI.pageHead("Study Session", ss.pomo ? (ss.pomo.phase === "break" ? "On a break — back soon" : "Focus round — stay with it") : (ss.paused ? "Paused" : "In session — stay focused"))}
+          ${UI.pageHead("Study Session", isFrozen(ss) ? "Paused" : ss.pomo ? (ss.pomo.phase === "break" ? "On a break — back soon" : "Focus round — stay with it") : (ss.paused ? "Paused" : "In session — stay focused"))}
           ${ringHTML(ss)}
           ${ss.queueIds.length ? `
             <div class="card card-pad mb-4">
@@ -470,7 +486,9 @@
             </div>` : ""}
           <div class="row" style="justify-content:center">
             ${ss.pomo
-              ? (ss.pomo.phase === "break"
+              ? (isFrozen(ss)
+                  ? `<button class="btn btn-primary btn-lg" data-ss-resume>${App.icon("play")} Resume</button>`
+                  : ss.pomo.phase === "break"
                   ? `<button class="btn btn-primary btn-lg" data-ss-skip-break>${App.icon("play")} Skip break</button>`
                   : "")
               : (ss.paused
@@ -548,6 +566,7 @@
 
         // pomodoro: drive phase countdown + transitions
         if (s2.pomo) {
+          if (isFrozen(s2)) return;   // held by a missed check-in until Resume
           const pi = phaseInfo(s2);
           if (pi.elapsed >= pi.total) { advancePhase(s2); return; } // advancePhase re-renders
           const timeEl = el.querySelector("[data-ss-time]");

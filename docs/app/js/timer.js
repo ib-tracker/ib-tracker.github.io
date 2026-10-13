@@ -56,6 +56,147 @@
     return true;
   };
 
+  /* ---------- check-ins ---------------------------------------------------
+     A clock left running is the usual way bad minutes get logged: you finish,
+     wander off, and the timer keeps counting. The 8-hour discard above only
+     catches the extreme case, and by throwing everything away.
+
+     So a running clock asks. 15 minutes past its target — or every hour of
+     counted time when there is no target, which includes pomodoro, whose
+     rounds cycle on their own — a "Still studying?" prompt appears, with an
+     OS banner if the app is in the background. "Yes" sets the next check-in an
+     hour on. No answer within 10 minutes pauses the clock BACK-DATED to the
+     moment the check-in was due, so the unattended time never counts.
+
+     The due moment is computed from the clock itself, not from when anything
+     noticed it. That is what makes a Mac that slept, or an app that was quit,
+     come out right: on the next tick or launch the clock is found long past
+     its check-in and paused there, keeping the honest minutes before it. Runs
+     before dropAbandoned at launch, so such a clock is paused, not discarded.
+
+     Both clocks share this — the task timer (state.timer) and the Study
+     Session (state.studySession). Their elapsed is the same shape. */
+  const CHECKIN_GRACE_MIN = 15;     // past the target before the first ask
+  const CHECKIN_EVERY_MIN = 60;     // untargeted clocks, and after each "yes"
+  const CHECKIN_ANSWER_MIN = 10;    // how long the prompt waits
+
+  const CLOCKS = {
+    timer: {
+      get: () => App.state().timer,
+      target: (c) => c.estimatedMinutes || 0,
+      label: (c) => c.taskTitle || "your task",
+    },
+    studySession: {
+      get: () => App.state().studySession,
+      target: (c) => (c.pomo ? 0 : c.duration || 0),
+      label: () => "your study session",
+    },
+  };
+
+  // Counted seconds at which this clock next asks.
+  function checkinDueSec(kind, c) {
+    if (c.checkinNextSec) return c.checkinNextSec;
+    const target = CLOCKS[kind].target(c);
+    return (target ? target + CHECKIN_GRACE_MIN : CHECKIN_EVERY_MIN) * 60;
+  }
+  // The wall-clock moment a running clock reached `sec` counted seconds.
+  function wallAt(c, sec) {
+    return c.startEpoch + (sec - (c.pausedAccumSec || 0)) * 1000;
+  }
+
+  let checkin = null;   // { kind, dueSec, handle } — the prompt on screen
+
+  function closeCheckin() {
+    if (!checkin) return;
+    const h = checkin.handle;
+    checkin = null;
+    if (h) h.close();
+  }
+
+  // Freeze the clock as it was at `dueSec`. system: the clock must be
+  // stoppable even read-only, or an expired trial would keep counting.
+  function autoPause(kind, dueSec) {
+    const c = CLOCKS[kind].get();
+    if (!c || c.paused) return;
+    const at = wallAt(c, dueSec);
+    App.update((s) => {
+      const x = s[kind];
+      if (!x || x.paused) return;
+      x.pausedAccumSec = dueSec;
+      if (kind === "studySession") {
+        // The per-task clock inside a session runs alongside; cut it at the
+        // same moment.
+        x.taskPausedAccumSec = Math.max(0, (x.taskPausedAccumSec || 0) + (at - x.taskStartEpoch) / 1000);
+        if (x.pomo && x.pomo.phase === "focus") {
+          const total = x.pomo.focusMin * 60;
+          x.pomo.frozenRemainingSec = App.clamp(total - (at - x.pomo.phaseStartEpoch) / 1000, 0, total);
+        }
+      }
+      x.paused = true;
+      // Resuming starts a fresh hour; left at dueSec it would ask at once.
+      x.checkinNextSec = dueSec + CHECKIN_EVERY_MIN * 60;
+    }, { system: true });
+    // Found at launch it may well be yesterday's clock, so say which day.
+    const atDate = new Date(at);
+    const day = App.dates.toStr(atDate);
+    const when = atDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+      + (day === App.dates.today() ? "" : ` on ${App.dates.fmtShort(day)}`);
+    App.announce(`Paused at ${when} — no answer to the check-in, so the time since wasn't counted`,
+      `${CLOCKS[kind].label(c)} was paused. Resume it if you're still going.`);
+  }
+
+  function askCheckin(kind, c, dueSec) {
+    App.chime();
+    App.notify("Still studying?", `${CLOCKS[kind].label(c)} is still running. No answer in ${CHECKIN_ANSWER_MIN} min and it pauses.`);
+    checkin = { kind, dueSec, handle: null };
+    checkin.handle = App.ui.openModal({
+      title: "Still studying?",
+      size: "sm",
+      body: `<p class="muted" style="font-size:13px;line-height:1.5">${esc(CLOCKS[kind].label(c))} has been running a while.
+        If you've stopped, pause it — the time since this appeared won't count.
+        No answer in ${CHECKIN_ANSWER_MIN} minutes and it pauses itself.</p>`,
+      foot: `
+        <button class="btn btn-outline" data-ci-pause>${App.icon("pause")} No, pause it</button>
+        <button class="btn btn-primary" data-ci-yes>${App.icon("play")} Yes, still going</button>`,
+      onMount(el) {
+        el.querySelector("[data-ci-yes]").addEventListener("click", () => {
+          const now = CLOCKS[kind].get();
+          closeCheckin();
+          if (!now) return;
+          const next = T.elapsedSec(now) + CHECKIN_EVERY_MIN * 60;
+          App.update((s) => { if (s[kind]) s[kind].checkinNextSec = next; }, { silent: true, system: true });
+        });
+        el.querySelector("[data-ci-pause]").addEventListener("click", () => {
+          closeCheckin();
+          autoPause(kind, dueSec);
+        });
+      },
+      // Dismissing without answering leaves it pending; the 10 minutes still run.
+      onClose() { if (checkin && checkin.kind === kind) checkin.handle = null; },
+    });
+  }
+
+  T.runCheckins = function () {
+    for (const kind of Object.keys(CLOCKS)) {
+      const c = CLOCKS[kind].get();
+      if (!c || c.paused) {
+        if (checkin && checkin.kind === kind) closeCheckin();
+        continue;
+      }
+      const dueSec = checkinDueSec(kind, c);
+      if (T.elapsedSec(c) < dueSec) {
+        if (checkin && checkin.kind === kind) closeCheckin();   // answered elsewhere
+        continue;
+      }
+      if (Date.now() - wallAt(c, dueSec) >= CHECKIN_ANSWER_MIN * 60000) {
+        if (checkin && checkin.kind === kind) closeCheckin();
+        autoPause(kind, dueSec);
+      } else if (!checkin) {
+        askCheckin(kind, c, dueSec);
+      }
+    }
+  };
+
   /* ---------- full screen ------------------------------------------------
      The same timer, larger. Deliberately not a third timer: it reads the same
      state.timer the floating widget does, so there is one clock, one elapsed
@@ -64,15 +205,18 @@
      Kept in a module variable rather than the store, so a reload never leaves
      you stuck in a full-screen view you cannot remember opening. */
   let fullscreen = false;
+  let fsEntering = false;   // animate the next render only — see .ff-enter
   T.isFullscreen = () => fullscreen && !!App.state().timer;
   T.setFullscreen = function (on) {
+    const was = fullscreen;
     fullscreen = !!on && !!App.state().timer;
+    fsEntering = fullscreen && !was;
     TU.renderFloating();
   };
 
-  // Escape is what everyone tries first.
+  // Escape is what everyone tries first. A dialog open on top claims it first.
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && T.isFullscreen()) T.setFullscreen(false);
+    if (e.key === "Escape" && !e.defaultPrevented && T.isFullscreen()) T.setFullscreen(false);
   });
 
   /* ---------- floating single-task timer ---------- */
@@ -302,8 +446,10 @@
     if (fullscreen) {
       const display = clockText(elapsed, estSec, overtime);
       const pct = estSec > 0 ? App.clamp((elapsed / estSec) * 100, 0, 100) : 0;
+      const enter = fsEntering;
+      fsEntering = false;
       root.innerHTML = `
-        <div class="ftimer-full ${overtime ? "overtime" : ""}" role="dialog" aria-label="Timer">
+        <div class="ftimer-full ${enter ? "ff-enter" : ""} ${overtime ? "overtime" : ""}" role="dialog" aria-label="Timer">
           <button class="icon-btn ftimer-exit" data-ft-exit title="Exit full screen (Esc)" aria-label="Exit full screen">${App.icon("minimize")}</button>
           <div class="ff-task">${esc(t.taskTitle || "Study Session")}</div>
           <div class="ff-clock" data-ft-time>${overtime ? "+" : ""}${display}</div>
@@ -433,6 +579,7 @@
     } else {
       lastOvertime = null;
     }
+    try { T.runCheckins(); } catch (e) { console.error(e); }
     // page-level tick hook (study session ring etc.)
     if (App.pageTick) { try { App.pageTick(); } catch (e) { console.error(e); } }
   }, 1000);

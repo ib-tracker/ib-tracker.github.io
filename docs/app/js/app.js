@@ -31,6 +31,10 @@
     // A clock left running overnight would otherwise resume as if no time had
     // passed and offer to log the whole night. Guarded like the backfill above:
     // a failure here must not cost a boot.
+    // Check-ins first: a clock that missed one while the app was closed is
+    // paused where it was due and keeps its honest minutes, instead of being
+    // thrown away whole by the 8-hour rule.
+    try { App.timer.runCheckins(); } catch (e) { console.error(e); }
     try { App.timer.dropAbandoned(); } catch (e) { console.error(e); }
     App.renderNow();
 
