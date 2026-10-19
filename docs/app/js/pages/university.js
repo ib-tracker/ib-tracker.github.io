@@ -312,6 +312,59 @@
     });
   }
 
+  /* Link courses that already exist to an application, several at once.
+     Courses already on another application are offered too, marked as moving
+     — App.setCourseApplication handles both: a standalone course's checklists
+     merge into the application's, one moving between applications brings only
+     its own. */
+  function openLinkCoursesModal(app) {
+    const apps = Object.fromEntries(App.state().applications.map((a) => [a.id, a]));
+    const candidates = App.state().courses
+      .filter((c) => c.application_id !== app.id)
+      .sort((a, b) => (a.application_id ? 1 : 0) - (b.application_id ? 1 : 0)
+        || `${a.university_name} ${a.course_name}`.localeCompare(`${b.university_name} ${b.course_name}`));
+    if (!candidates.length) {
+      App.toast("No other courses to link yet. Add one with Add Course.", "error");
+      return;
+    }
+    UI.openModal({
+      title: `Link courses to ${app.name || "this application"}`,
+      body: `
+        <p class="muted small mb-3">Tick the courses that are part of this application. Their deadline and status will then come from the application.</p>
+        <div class="link-course-list">
+          ${candidates.map((c) => {
+            const from = c.application_id && apps[c.application_id];
+            return `
+            <label class="link-course-row">
+              <input type="checkbox" value="${esc(c.id)}" data-link-course>
+              <span>
+                <span class="lcr-name">${esc(c.university_name)} — ${esc(c.course_name)}</span>
+                <span class="lcr-sub">${from ? `On ${esc(from.name)} · will move here` : "Standalone course"}</span>
+              </span>
+            </label>`;
+          }).join("")}
+        </div>`,
+      foot: `<button class="btn btn-outline" data-close>Cancel</button>
+             <button class="btn btn-primary" data-link-save disabled>Link courses</button>`,
+      onMount(el, handle) {
+        const boxes = [...el.querySelectorAll("[data-link-course]")];
+        const save = el.querySelector("[data-link-save]");
+        const sync = () => {
+          const n = boxes.filter((b) => b.checked).length;
+          save.disabled = !n;
+          save.textContent = n ? `Link ${n} course${n === 1 ? "" : "s"}` : "Link courses";
+        };
+        boxes.forEach((b) => b.addEventListener("change", sync));
+        save.addEventListener("click", () => {
+          const ids = boxes.filter((b) => b.checked).map((b) => b.value);
+          for (const id of ids) App.setCourseApplication(id, app.id);
+          App.toast(`Linked ${ids.length} course${ids.length === 1 ? "" : "s"} to ${app.name || "the application"}`);
+          handle.close();
+        });
+      },
+    });
+  }
+
   /* Add or edit an application: UCAS, Common App, or one university's
      application covering several courses. */
   function openApplicationModal(app) {
@@ -577,6 +630,7 @@
             </div>`).join("")}
           <div class="uni-app-add">
             <button class="btn btn-ghost btn-sm" data-add-course-to="${esc(app.id)}">${App.icon("plus")} Add course to this application</button>
+            <button class="btn btn-ghost btn-sm" data-link-courses-to="${esc(app.id)}">${App.icon("link")} Link existing courses</button>
           </div>
         </div>
         ${trackerBodyHTML(app, tasks, labelFor, true)}
@@ -768,6 +822,8 @@
         b.addEventListener("click", () => openApplicationModal(App.applicationById(b.dataset.appEdit))));
       el.querySelectorAll("[data-add-course-to]").forEach((b) =>
         b.addEventListener("click", () => openCourseModal(null, b.dataset.addCourseTo)));
+      el.querySelectorAll("[data-link-courses-to]").forEach((b) =>
+        b.addEventListener("click", () => openLinkCoursesModal(App.applicationById(b.dataset.linkCoursesTo))));
 
       /* One wiring for every checklist on the page: tick, remove, add.
          `get` reads the list fresh; `set` writes it back. */

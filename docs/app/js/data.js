@@ -1251,9 +1251,10 @@
   }
 
   /* Put a course on an application ("" = make it standalone). Joining merges
-     its checklists into the application's (duplicates dropped, ticked if
-     ticked in either), keeps a deadline that differs from the application's
-     as the course's own, and can only move the application's status forward. */
+     the steps the application already has (ticked if ticked in either) and
+     keeps the rest as the course's own, merges materials, keeps a deadline
+     that differs from the application's as the course's own, and can only
+     move the application's status forward. */
   App.setCourseApplication = function (courseId, appId) {
     App.update((s) => {
       const c = s.courses.find((x) => x.id === courseId);
@@ -1274,7 +1275,16 @@
       if (old) detach(c, old);
       else if (c.application_id) { delete c.application_id; delete c.choice_rank; delete c.own_deadline; delete c.course_steps; }
       if (a) {
-        a.key_steps = mergeChecklist(a.key_steps, c.key_steps);
+        /* Steps the application already has ("Personal statement") merge into
+           its shared tracker, keeping their ticks. Anything else is about this
+           course ("Bristol open day") and goes to its own list — on a UCAS
+           application across five universities, the shared tracker is no
+           place for one university's open day. */
+        const key = (x) => String(x.item || "").trim().toLowerCase();
+        const shared = new Set((a.key_steps || []).map(key));
+        const mineSteps = (c.key_steps || []).filter((x) => key(x));
+        a.key_steps = mergeChecklist(a.key_steps, mineSteps.filter((x) => shared.has(key(x))));
+        c.course_steps = mergeChecklist(c.course_steps, mineSteps.filter((x) => !shared.has(key(x))));
         a.materials = mergeChecklist(a.materials, c.materials);
         const mine = c.application_deadline || "";
         if (!a.application_deadline && mine) a.application_deadline = mine;
@@ -1282,7 +1292,6 @@
         const stage = App.UNI_STAGES.includes(c.stage) ? c.stage : "not_started";
         if (App.UNI_STAGES.indexOf(stage) > App.UNI_STAGES.indexOf(a.stage)) a.stage = stage;
         c.key_steps = []; c.materials = [];
-        if (!Array.isArray(c.course_steps)) c.course_steps = [];
         c.application_id = a.id;
         c.choice_rank = s.courses.filter((x) => x.application_id === a.id).length + 1;
         a.updated_at = now();

@@ -912,7 +912,13 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .uni-app-course .uac-uni { font-size: 12px; color: var(--ink-2); font-weight: 600; }
 .uni-app-course .uac-steps .subtask-add { margin-top: 4px; }
 .uni-app-course .uac-steps-open { margin-top: 8px; padding-left: 0; }
-.uni-app-add { padding: 8px 12px; }
+.uni-app-add { padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 4px; }
+.link-course-list { display: grid; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.link-course-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px; border: 1px solid var(--hairline); border-radius: 10px; cursor: pointer; }
+.link-course-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.link-course-row input { margin-top: 3px; }
+.link-course-row .lcr-name { display: block; font-size: 13px; font-weight: 600; }
+.link-course-row .lcr-sub { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
 .uni-warn { margin-top: 10px; padding: 8px 11px; border-radius: 9px; background: var(--warning-soft, rgba(237,161,0,.12)); color: var(--warning-ink, var(--ink)); font-size: 12.5px; display: grid; gap: 4px; }
 .uni-warn svg { width: 13px; height: 13px; vertical-align: -2px; }
 .uni-app-course .uac-name { font-size: 14px; font-weight: 600; margin-top: 1px; }

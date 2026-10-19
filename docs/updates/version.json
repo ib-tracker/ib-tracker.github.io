@@ -1,16 +1,13 @@
 {
-  "version": "1.9.0",
+  "version": "1.9.1",
   "released": "2026-10-19",
   "notes": [
-    "University applications that cover several courses now work the way they really do. Use the new Add Application button to set up UCAS, Common App, or one university's application that lets you apply to several courses, then add your courses to it.",
-    "Each application has one deadline, one status, and a shared checklist and materials list for things like your personal statement and reference. Each course keeps its own university, entrance exam, interview, offer conditions, and a small checklist of its own for supplements or admissions tests. A course can still have its own deadline if it differs.",
-    "Offers are tracked in two parts: the university's decision (conditional, unconditional, unsuccessful or withdrawn) and your reply (firm, insurance or declined). An application holds one firm and one insurance at most. Courses you already had keep their status: \"Accepted\" now shows as an offer with your firm choice, and \"Rejected\" as unsuccessful.",
-    "For a UCAS application, the card warns you about UCAS's own rules: more than five choices, more than four in medicine, dentistry or veterinary science, applying to both Oxford and Cambridge, or holding an insurance choice behind an unconditional firm.",
-    "Turn on ranking for an application that asks you to order your choices, and the courses show as 1st choice, 2nd choice and so on, with buttons to reorder them. Tasks can now be linked to a whole application as well as to a single course."
+    "You can now link courses you've already added to an application. On an application's card, press Link existing courses, tick the ones that belong to it, and they join in one go. Courses on another application are listed too, and move across.",
+    "When a course joins an application, steps the application already has (like your personal statement) are combined with it and stay ticked if you'd done them. Steps that are only about that course, like one university's open day, stay on that course's own checklist instead of being added to the shared one."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.9.0.zip",
-    "sha256": "29a8d46f1df5607fd921da7235415fab34cec33540816101670dee6e26e80d1d",
-    "size": 261714
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.9.1.zip",
+    "sha256": "c8457b0839210c54508a6db7950beddb39c099ca0c29adc6485f5270d5db4207",
+    "size": 262675
   }
 }
