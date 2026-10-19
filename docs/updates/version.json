@@ -1,16 +1,16 @@
 {
-  "version": "1.8.0",
-  "released": "2026-10-13",
+  "version": "1.9.0",
+  "released": "2026-10-19",
   "notes": [
-    "Forget to stop the timer? It now checks in. Fifteen minutes past your target (or every hour if there isn't one), a \"Still studying?\" prompt appears. Answer yes and it carries on; if nobody answers within ten minutes it pauses itself at the moment it asked, so the time you weren't there is never logged. This covers the task timer and Study Session, pomodoro included.",
-    "A timer left running when you closed the app is now found paused at its check-in with your real minutes kept, instead of being thrown away the next morning.",
-    "Study Session now logs only the time actually counted. Pauses and pomodoro breaks used to be logged as study.",
-    "In the Scheduler you can place part of a task. Drop it on a day and you're asked how long; put two hours of a six-hour task on Monday and it stays in the Unscheduled list with four hours to go. Auto-Schedule keeps the blocks you placed and plans only the rest.",
-    "In full-screen timer, Cancel works again (its confirmation was opening hidden behind the timer), and Pause no longer makes the screen flash."
+    "University applications that cover several courses now work the way they really do. Use the new Add Application button to set up UCAS, Common App, or one university's application that lets you apply to several courses, then add your courses to it.",
+    "Each application has one deadline, one status, and a shared checklist and materials list for things like your personal statement and reference. Each course keeps its own university, entrance exam, interview, offer conditions, and a small checklist of its own for supplements or admissions tests. A course can still have its own deadline if it differs.",
+    "Offers are tracked in two parts: the university's decision (conditional, unconditional, unsuccessful or withdrawn) and your reply (firm, insurance or declined). An application holds one firm and one insurance at most. Courses you already had keep their status: \"Accepted\" now shows as an offer with your firm choice, and \"Rejected\" as unsuccessful.",
+    "For a UCAS application, the card warns you about UCAS's own rules: more than five choices, more than four in medicine, dentistry or veterinary science, applying to both Oxford and Cambridge, or holding an insurance choice behind an unconditional firm.",
+    "Turn on ranking for an application that asks you to order your choices, and the courses show as 1st choice, 2nd choice and so on, with buttons to reorder them. Tasks can now be linked to a whole application as well as to a single course."
   ],
   "payload": {
-    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.8.0.zip",
-    "sha256": "cf4a7cda42a79a4da64260abebd7971cbca89dd13988b0e5489c18a821b4bf4e",
-    "size": 253132
+    "url": "https://ib-tracker.github.io/updates/ib-tracker-1.9.0.zip",
+    "sha256": "29a8d46f1df5607fd921da7235415fab34cec33540816101670dee6e26e80d1d",
+    "size": 261714
   }
 }

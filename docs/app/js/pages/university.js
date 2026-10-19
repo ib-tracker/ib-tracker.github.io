@@ -148,14 +148,34 @@
     return `<div class="section-label" style="margin-top:10px">Requirements</div><div class="req-bars">${hlBar}${rows}</div>`;
   }
 
-  function openCourseModal(course) {
+  const optionsOf = (keys) => keys.map((k) => [k, App.UNI_STATUSES[k].label]);
+
+  // Decision and reply, shared by the course form whether or not the course is
+  // on an application. A reply only means something once there's an offer.
+  function outcomeFieldsHTML(f) {
+    return `
+        <div class="form-row">
+          <div class="field"><label>Their decision</label>${UI.selectHTML("decision", [["", "No decision yet"], ...optionsOf(App.UNI_DECISIONS)], f.decision || "", "data-decision")}</div>
+          <div class="field"><label>Your reply</label>${UI.selectHTML("reply", [["", "No reply yet"], ...optionsOf(App.UNI_REPLIES)], f.reply || "", `data-reply ${App.isUniOffer(f.decision) ? "" : "disabled"}`)}</div>
+        </div>`;
+  }
+
+  /* Add or edit a course. `presetAppId` opens it already on an application
+     (the "Add course" button inside an application's card). */
+  function openCourseModal(course, presetAppId) {
     const f = course || {
       university_name: "", course_name: "", application_deadline: "", entrance_exam_date: "",
       interview_date: "", offer_ib_points: "", hl_total_required: "", requirements: [], links: [],
-      status: "not_started", tuition_cny: "", tuition_secondary: "", tuition_currency: "USD", notes: "",
+      stage: "not_started", decision: "", reply: "", tuition_cny: "", tuition_secondary: "", tuition_currency: "USD", notes: "",
+      application_id: presetAppId || "", own_deadline: "",
     };
     const ibPoints = [];
     for (let p = 24; p <= 45; p++) ibPoints.push([String(p), p + " points"]);
+    const apps = App.state().applications;
+    const appOpts = [["", "None (a standalone course)"], ...apps.map((x) => [x.id, x.name || "Untitled application"])];
+    const curApp = f.application_id || "";
+    const onApp = !!curApp;
+    const appDeadline = (id) => { const x = App.applicationById(id); return x && x.application_deadline ? D.fmtMed(x.application_deadline) : "not set"; };
     UI.openModal({
       title: course ? "Edit Course" : "Add University Course",
       size: "lg",
@@ -164,14 +184,26 @@
           <div class="field"><label>University *</label><input class="input" name="university_name" value="${esc(f.university_name)}" placeholder="e.g. Oxford"></div>
           <div class="field"><label>Course *</label><input class="input" name="course_name" value="${esc(f.course_name)}" placeholder="e.g. PPE"></div>
         </div>
+        ${apps.length ? `
+          <div class="field">
+            <label>Application</label>
+            ${UI.selectHTML("application_id", appOpts, curApp, "data-app-pick")}
+            <p class="hint">Part of UCAS, Common App, or one university's application covering several courses? Pick it here; the deadline, status and shared checklists then come from the application.</p>
+          </div>` : ""}
         <div class="form-row">
-          <div class="field"><label>Application deadline</label><input class="input" type="date" name="application_deadline" value="${esc(f.application_deadline)}"></div>
-          <div class="field"><label>Status</label>${UI.selectHTML("status", Object.entries(App.UNI_STATUSES).map(([k, v]) => [k, v.label]), f.status)}</div>
+          <div class="field" data-standalone ${onApp ? "hidden" : ""}><label>Application deadline</label><input class="input" type="date" name="application_deadline" value="${esc(onApp ? "" : f.application_deadline)}"></div>
+          <div class="field" data-on-app ${onApp ? "" : "hidden"}>
+            <label>Own deadline <span class="muted" style="font-weight:400">(optional)</span></label>
+            <input class="input" type="date" name="own_deadline" value="${esc(f.own_deadline || "")}">
+            <p class="hint" data-app-deadline-hint>Leave blank to use the application's: ${esc(appDeadline(curApp))}</p>
+          </div>
+          <div class="field" data-standalone ${onApp ? "hidden" : ""}><label>Status</label>${UI.selectHTML("stage", optionsOf(App.UNI_STAGES), f.stage || "not_started")}</div>
         </div>
         <div class="form-row">
           <div class="field"><label>Entrance exam date</label><input class="input" type="date" name="entrance_exam_date" value="${esc(f.entrance_exam_date)}"></div>
           <div class="field"><label>Interview date</label><input class="input" type="date" name="interview_date" value="${esc(f.interview_date)}"></div>
         </div>
+        ${outcomeFieldsHTML(f)}
         <hr class="divider">
         <div class="section-label">Offer conditions</div>
         <div class="form-row">
@@ -186,7 +218,7 @@
         <hr class="divider">
         <div class="field">
           <label>Links</label>
-          <p class="hint mb-2">Course page, application portal, prospectus — anything you keep re-finding.</p>
+          <p class="hint mb-2">Course page, prospectus — anything you keep re-finding.</p>
           <div data-link-list>${(f.links || []).map(linkRowHTML).join("")}</div>
           <button type="button" class="btn btn-outline btn-sm" data-link-add>${App.icon("plus")} Add link</button>
         </div>
@@ -207,6 +239,24 @@
              <button class="btn btn-primary" data-save>${course ? "Update" : "Add Course"}</button>`,
       onMount(el, handle) {
         const readLinks = wireLinkList(el);
+        const pick = el.querySelector("[data-app-pick]");
+        if (pick) pick.addEventListener("change", () => {
+          const on = !!pick.value;
+          el.querySelectorAll("[data-standalone]").forEach((n) => { n.hidden = on; });
+          el.querySelectorAll("[data-on-app]").forEach((n) => { n.hidden = !on; });
+          el.querySelector("[data-app-deadline-hint]").textContent = `Leave blank to use the application's: ${appDeadline(pick.value)}`;
+          // Joining from standalone: a deadline of its own that differs from
+          // the application's is carried over, visibly, rather than dropped.
+          const own = el.querySelector("[name=own_deadline]");
+          const mine = el.querySelector("[name=application_deadline]").value;
+          const x = on && App.applicationById(pick.value);
+          if (x && !own.value && mine && mine !== x.application_deadline) own.value = mine;
+        });
+        const decision = el.querySelector("[data-decision]"), reply = el.querySelector("[data-reply]");
+        decision.addEventListener("change", () => {
+          reply.disabled = !App.isUniOffer(decision.value);
+          if (reply.disabled) reply.value = "";
+        });
         const reqList = el.querySelector("[data-req-list]");
         const wireReqRow = (rowEl) => rowEl.querySelector("[data-req-del]").addEventListener("click", () => rowEl.remove());
         reqList.querySelectorAll("[data-req-row]").forEach(wireReqRow);
@@ -224,14 +274,15 @@
             App.toast("University and course names are required", "error");
             return;
           }
+          const appId = pick ? pick.value : curApp;
           const requirements = [...reqList.querySelectorAll("[data-req-row]")].map((rowEl) => ({
             subject_name: rowEl.querySelector("[data-req-subject]").value,
             grade: App.clamp(Number(rowEl.querySelector("[data-req-grade]").value) || 0, 0, 7),
           })).filter((r) => r.subject_name && r.grade);
           const payload = {
             university_name: data.university_name.trim(), course_name: data.course_name.trim(),
-            application_deadline: data.application_deadline || "", entrance_exam_date: data.entrance_exam_date || "",
-            interview_date: data.interview_date || "", status: data.status,
+            entrance_exam_date: data.entrance_exam_date || "", interview_date: data.interview_date || "",
+            decision: data.decision || "", reply: App.isUniOffer(data.decision) ? data.reply || "" : "",
             offer_ib_points: Number(data.offer_ib_points) || 0,
             hl_total_required: App.clamp(Number(data.hl_total_required) || 0, 0, 21),
             requirements,
@@ -241,13 +292,79 @@
             tuition_currency: data.tuition_currency || "USD",
             notes: data.notes || "",
           };
-          if (!course) {
+          // Standalone fields only when it stays standalone; on an application
+          // the deadline and status are the application's.
+          if (!appId) { payload.application_deadline = data.application_deadline || ""; payload.stage = data.stage || "not_started"; }
+          // A course created straight onto an application takes the
+          // application's checklists — defaults would re-add removed steps.
+          if (!course && !appId) {
             payload.key_steps = App.defaultKeySteps().map((item) => ({ item, completed: false }));
             payload.materials = App.defaultMaterials().map((item) => ({ item, completed: false }));
           }
-          App.saveCourse(course ? course.id : null, payload);
+          if (!course) payload.application_id = "";   // joined below, through the one path that merges
+          const id = App.saveCourse(course ? course.id : null, payload);
+          if ((course ? course.application_id || "" : "") !== appId) App.setCourseApplication(id, appId);
+          if (appId) App.updateCourse(id, { own_deadline: data.own_deadline || "" });
           App.toast(course ? "Course updated" : "Course added");
           handle.close();
+        });
+      },
+    });
+  }
+
+  /* Add or edit an application: UCAS, Common App, or one university's
+     application covering several courses. */
+  function openApplicationModal(app) {
+    const f = app || { name: "", application_deadline: "", stage: "not_started", ranked: false, links: [], notes: "" };
+    UI.openModal({
+      title: app ? "Edit Application" : "Add Application",
+      body: `
+        <div class="field"><label>Name *</label>
+          <input class="input" name="name" value="${esc(f.name)}" placeholder="e.g. UCAS, Common App, University of Hong Kong" maxlength="80">
+          <p class="hint">One application covering several courses. Add courses to it afterwards, from its card or from each course's form.</p></div>
+        <div class="form-row">
+          <div class="field"><label>Deadline</label><input class="input" type="date" name="application_deadline" value="${esc(f.application_deadline)}"></div>
+          <div class="field"><label>Status</label>${UI.selectHTML("stage", optionsOf(App.UNI_STAGES), f.stage)}</div>
+        </div>
+        <label class="row" style="gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer">
+          <input type="checkbox" name="ranked" ${f.ranked ? "checked" : ""}> These choices are ranked (1st choice, 2nd choice…)
+        </label>
+        <div class="field">
+          <label>Links</label>
+          <div data-link-list>${(f.links || []).map(linkRowHTML).join("")}</div>
+          <button type="button" class="btn btn-outline btn-sm" data-link-add>${App.icon("plus")} Add link</button>
+        </div>
+        <div class="field"><label>Notes</label><textarea class="textarea" name="notes" rows="2">${esc(f.notes)}</textarea></div>`,
+      footSplit: !!app,
+      foot: `${app ? `<button class="btn btn-danger-ghost" data-app-delete>${App.icon("trash")} Delete</button>` : ""}
+             <span class="grp">
+               <button class="btn btn-outline" data-close>Cancel</button>
+               <button class="btn btn-primary" data-save>${app ? "Update" : "Add Application"}</button>
+             </span>`,
+      onMount(el, handle) {
+        const readLinks = wireLinkList(el);
+        el.querySelector("[data-save]").addEventListener("click", () => {
+          const data = UI.readForm(el);
+          const name = String(data.name || "").trim();
+          if (!name) { App.toast("Give the application a name", "error"); return; }
+          App.saveApplication(app ? app.id : null, {
+            name, application_deadline: data.application_deadline || "", stage: data.stage || "not_started",
+            ranked: !!el.querySelector("[name=ranked]").checked, links: readLinks(), notes: data.notes || "",
+          });
+          App.toast(app ? "Application updated" : "Application added");
+          handle.close();
+        });
+        const del = el.querySelector("[data-app-delete]");
+        if (del) del.addEventListener("click", async () => {
+          const n = App.applicationCourses(app.id).length;
+          const ok = await UI.confirm({
+            title: "Delete application?",
+            message: `“${app.name}” will be removed.${n ? ` Its ${n} course${n === 1 ? "" : "s"} stay, each as a standalone course with its own copy of the deadline, status and checklists.` : ""} Tasks linked to the application become unlinked.`,
+          });
+          if (!ok) return;
+          handle.close();
+          App.deleteApplication(app.id);
+          App.toast("Application deleted");
         });
       },
     });
@@ -260,90 +377,80 @@
     });
   }
 
-  function courseCardHTML(course, uniTasks) {
-    const status = App.UNI_STATUSES[course.status] || App.UNI_STATUSES.not_started;
-    const keySteps = course.key_steps || [];
+  const ordinal = (n) => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+
+  const dateChip = (label, ds, overduePrefix) => {
+    if (!ds) return "";
+    const late = isPast(ds);
+    return `<span class="chip ${late ? "chip-danger" : "chip-plain"}">${App.icon("calendar")} ${label}: ${D.fmtMed(ds)}${late ? " · " + (overduePrefix || "passed") : ""}</span>`;
+  };
+  const statusChip = (key, title) => {
+    const st = App.UNI_STATUSES[key];
+    return st ? `<span class="chip ${st.chip}"${title ? ` title="${esc(title)}"` : ""}>${esc(st.label)}</span>` : "";
+  };
+  // The decision and the reply, side by side: "Conditional Offer" "Firm Choice".
+  const outcomeChips = (c) => statusChip(c.decision, "Their decision") + statusChip(c.reply, "Your reply");
+
+  function factsHTML(course) {
+    if (!(course.offer_ib_points || course.tuition_cny || course.tuition_secondary)) return "";
+    return `
+      <div class="uni-facts">
+        ${course.offer_ib_points ? `<span>Offer: <strong>${course.offer_ib_points} pts</strong></span>` : ""}
+        ${course.tuition_cny ? `<span>Tuition: <strong>¥${course.tuition_cny.toLocaleString()}/yr</strong></span>` : ""}
+        ${course.tuition_secondary ? `<span><strong>${course.tuition_secondary.toLocaleString()} ${esc(course.tuition_currency || "USD")}/yr</strong></span>` : ""}
+      </div>`;
+  }
+
+  function linksHTML(links) {
+    if (!(links || []).length) return "";
+    return `
+      <div class="uni-links">
+        ${links.map((l) => `
+          <a class="uni-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" title="${esc(l.url)}">
+            ${App.icon("link")} ${esc(l.label)}
+          </a>`).join("")}
+      </div>`;
+  }
+
+  // A tickable list with add/remove. `kind` names the data-attributes the
+  // handlers in mount() look for: step, mat or cstep.
+  function checklistHTML(items, kind, placeholder, empty) {
+    return `
+      <div class="stack-sm" style="gap:2px">
+        ${items.map((it, i) => `
+          <div class="checklist-row ${it.completed ? "done" : ""}">
+            <button class="task-check ${it.completed ? "checked" : ""}" style="width:17px;height:17px" data-${kind}="${i}">${App.icon("check")}</button>
+            <span class="cl-text">${esc(it.item)}</span>
+            <button class="icon-btn danger" data-${kind}-del="${i}" title="Remove">${App.icon("x")}</button>
+          </div>`).join("")}
+        ${!items.length && empty ? `<p class="muted small">${empty}</p>` : ""}
+      </div>
+      <div class="subtask-add">
+        <input class="input input-sm" data-${kind}-new placeholder="${placeholder}" style="flex:1">
+        <button class="btn btn-outline btn-sm" data-${kind}-add aria-label="${placeholder}">${App.icon("plus")}</button>
+      </div>`;
+  }
+
+  /* Tracker, materials, linked tasks and notes. `owner` is the course (on its
+     own) or the application; `labelFor` names the course a task belongs to
+     when the list spans an application. */
+  function trackerBodyHTML(owner, tasks, labelFor, isApp) {
+    const keySteps = owner.key_steps || [];
     const doneSteps = keySteps.filter((k) => k.completed).length;
     const stepPct = keySteps.length ? Math.round((doneSteps / keySteps.length) * 100) : 0;
-    const materials = course.materials || [];
-    const courseTasks = uniTasks.filter((t) => t.university_course_id === course.id);
-
-    const dateChip = (label, ds, overduePrefix) => {
-      if (!ds) return "";
-      const late = isPast(ds);
-      return `<span class="chip ${late ? "chip-danger" : "chip-plain"}">${App.icon("calendar")} ${label}: ${D.fmtMed(ds)}${late ? " · " + (overduePrefix || "passed") : ""}</span>`;
-    };
-
     return `
-      <div class="card" data-course="${esc(course.id)}">
-        <div class="card-pad" style="border-bottom:1px solid var(--hairline)">
-          <div class="row between" style="align-items:flex-start">
-            <div>
-              <h3 style="font-size:16px">${esc(course.university_name)}</h3>
-              <p class="muted" style="font-size:13px">${esc(course.course_name)}</p>
-            </div>
-            <div class="row" style="gap:6px">
-              <span class="chip ${status.chip}">${esc(status.label)}</span>
-              <button class="icon-btn" data-cact="edit" title="Edit course">${App.icon("pencil")}</button>
-              <button class="icon-btn danger" data-cact="delete" title="Delete course">${App.icon("trash")}</button>
-            </div>
-          </div>
-          <div class="uni-head-chips">
-            ${dateChip("Apply by", course.application_deadline)}
-            ${dateChip("Exam", course.entrance_exam_date)}
-            ${dateChip("Interview", course.interview_date)}
-          </div>
-          ${(course.offer_ib_points || course.tuition_cny || course.tuition_secondary) ? `
-            <div class="uni-facts">
-              ${course.offer_ib_points ? `<span>Offer: <strong>${course.offer_ib_points} pts</strong></span>` : ""}
-              ${course.tuition_cny ? `<span>Tuition: <strong>¥${course.tuition_cny.toLocaleString()}/yr</strong></span>` : ""}
-              ${course.tuition_secondary ? `<span><strong>${course.tuition_secondary.toLocaleString()} ${esc(course.tuition_currency || "USD")}/yr</strong></span>` : ""}
-            </div>` : ""}
-          ${requirementBarsHTML(course)}
-          ${(course.links || []).length ? `
-            <div class="uni-links">
-              ${course.links.map((l) => `
-                <a class="uni-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" title="${esc(l.url)}">
-                  ${App.icon("link")} ${esc(l.label)}
-                </a>`).join("")}
-            </div>` : ""}
-        </div>
         <div class="card-pad stack">
           <div>
             <div class="row between mb-2">
-              <span class="section-label" style="margin-bottom:0">Application tracker <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">· tick off, remove, or add your own</span></span>
+              <span class="section-label" style="margin-bottom:0">${isApp ? "Shared application tracker" : "Application tracker"} <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">· tick off, remove, or add your own</span></span>
               <span class="muted small">${doneSteps}/${keySteps.length}</span>
             </div>
             <div class="progress thin mb-3"><span style="width:${stepPct}%"></span></div>
-            <div class="stack-sm" style="gap:2px">
-              ${keySteps.map((step, i) => `
-                <div class="checklist-row ${step.completed ? "done" : ""}">
-                  <button class="task-check ${step.completed ? "checked" : ""}" style="width:17px;height:17px" data-step="${i}">${App.icon("check")}</button>
-                  <span class="cl-text">${esc(step.item)}</span>
-                  <button class="icon-btn danger" data-step-del="${i}" title="Remove">${App.icon("x")}</button>
-                </div>`).join("")}
-              ${!keySteps.length ? `<p class="muted small">No steps yet</p>` : ""}
-            </div>
-            <div class="subtask-add">
-              <input class="input input-sm" data-step-new placeholder="Add a step…" style="flex:1">
-              <button class="btn btn-outline btn-sm" data-step-add>${App.icon("plus")}</button>
-            </div>
+            ${checklistHTML(keySteps, "step", "Add a step…", "No steps yet")}
           </div>
           <div>
-            <div class="section-label">Required materials <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">· tick off, remove, or add your own below</span></div>
-            <div class="stack-sm" style="gap:2px">
-              ${materials.map((m, i) => `
-                <div class="checklist-row ${m.completed ? "done" : ""}">
-                  <button class="task-check ${m.completed ? "checked" : ""}" style="width:17px;height:17px" data-mat="${i}">${App.icon("check")}</button>
-                  <span class="cl-text">${esc(m.item)}</span>
-                  <button class="icon-btn danger" data-mat-del="${i}" title="Remove">${App.icon("x")}</button>
-                </div>`).join("")}
-              ${!materials.length ? `<p class="muted small">No materials added</p>` : ""}
-            </div>
-            <div class="subtask-add">
-              <input class="input input-sm" data-mat-new placeholder="Add material…" style="flex:1">
-              <button class="btn btn-outline btn-sm" data-mat-add>${App.icon("plus")}</button>
-            </div>
+            <div class="section-label">${isApp ? "Shared materials" : "Required materials"} <span class="muted" style="font-weight:400;text-transform:none;letter-spacing:0">· tick off, remove, or add your own below</span></div>
+            ${checklistHTML(owner.materials || [], "mat", "Add material…", "No materials added")}
           </div>
           <div>
             <div class="row between mb-2">
@@ -351,23 +458,128 @@
               <button class="btn btn-ghost btn-sm" data-add-task-for>${App.icon("plus")} Add task</button>
             </div>
             <div class="stack-sm" style="gap:2px">
-              ${courseTasks.map((t) => `
+              ${tasks.map((t) => `
                 <div class="checklist-row ${t.completed ? "done" : ""}" data-linked-task="${esc(t.id)}">
                   <button class="task-check ${t.completed ? "checked" : ""}" style="width:17px;height:17px" data-lt-toggle>${App.icon("check")}</button>
                   <span class="cl-text">${esc(t.title)}</span>
+                  ${labelFor && labelFor(t) ? `<span class="chip chip-plain">${esc(labelFor(t))}</span>` : ""}
                   ${t.due_date ? `<span class="small ${App.isOverdue(t) ? "chip chip-danger" : "muted"}">${D.fmtShort(t.due_date)}</span>` : ""}
                   ${UI.priorityChip(t.priority)}
                   <button class="icon-btn danger" data-lt-del title="Delete task">${App.icon("trash")}</button>
                 </div>`).join("")}
-              ${!courseTasks.length ? `<p class="muted small">No tasks linked to this course</p>` : ""}
+              ${!tasks.length ? `<p class="muted small">No tasks linked to this ${isApp ? "application" : "course"}</p>` : ""}
             </div>
           </div>
-          ${course.notes ? `
+          ${owner.notes ? `
             <div>
               <div class="section-label">Notes</div>
-              <p class="small muted" style="white-space:pre-wrap">${esc(course.notes)}</p>
+              <p class="small muted" style="white-space:pre-wrap">${esc(owner.notes)}</p>
             </div>` : ""}
+        </div>`;
+  }
+
+  function courseCardHTML(course, uniTasks) {
+    const tasks = uniTasks.filter((t) => t.university_course_id === course.id);
+    return `
+      <div class="card" data-owner="course" data-owner-id="${esc(course.id)}">
+        <div class="card-pad" style="border-bottom:1px solid var(--hairline)">
+          <div class="row between" style="align-items:flex-start">
+            <div>
+              <h3 style="font-size:16px">${esc(course.university_name)}</h3>
+              <p class="muted" style="font-size:13px">${esc(course.course_name)}</p>
+            </div>
+            <div class="row wrap" style="gap:6px;justify-content:flex-end">
+              ${course.decision ? outcomeChips(course) : statusChip(course.stage)}
+              <button class="icon-btn" data-cact="edit" data-cid="${esc(course.id)}" title="Edit course">${App.icon("pencil")}</button>
+              <button class="icon-btn danger" data-cact="delete" data-cid="${esc(course.id)}" title="Delete course">${App.icon("trash")}</button>
+            </div>
+          </div>
+          <div class="uni-head-chips">
+            ${dateChip("Apply by", course.application_deadline)}
+            ${dateChip("Exam", course.entrance_exam_date)}
+            ${dateChip("Interview", course.interview_date)}
+          </div>
+          ${factsHTML(course)}
+          ${requirementBarsHTML(course)}
+          ${linksHTML(course.links)}
         </div>
+        ${trackerBodyHTML(course, tasks, null, false)}
+      </div>`;
+  }
+
+  /* An application: its name, deadline, status and links on top; then each
+     course as a row of its own — university, course, its own dates, decision
+     and reply, offer conditions and a checklist just for it; then the
+     application's shared tracker, materials, tasks and notes. */
+  function applicationCardHTML(app, courses, uniTasks) {
+    const ids = new Set(courses.map((c) => c.id));
+    const tasks = uniTasks.filter((t) => t.university_course_id === app.id || ids.has(t.university_course_id));
+    const byId = Object.fromEntries(courses.map((c) => [c.id, c]));
+    const labelFor = (t) => byId[t.university_course_id]
+      ? `${byId[t.university_course_id].university_name === app.name ? "" : byId[t.university_course_id].university_name + " · "}${byId[t.university_course_id].course_name}` : "";
+    const warnings = App.applicationWarnings(app, courses);
+    const sameUni = (c) => c.university_name.trim().toLowerCase() === String(app.name || "").trim().toLowerCase();
+    return `
+      <div class="card uni-app" data-owner="app" data-owner-id="${esc(app.id)}">
+        <div class="card-pad" style="border-bottom:1px solid var(--hairline)">
+          <div class="row between" style="align-items:flex-start">
+            <div>
+              <h3 style="font-size:16px">${esc(app.name || "Untitled application")}</h3>
+              <p class="muted" style="font-size:13px">Application · ${courses.length ? `${courses.length} course${courses.length === 1 ? "" : "s"}` : "no courses yet"}</p>
+            </div>
+            <div class="row" style="gap:6px">
+              ${statusChip(app.stage, "Application status")}
+              <button class="icon-btn" data-app-edit="${esc(app.id)}" title="Edit application">${App.icon("pencil")}</button>
+            </div>
+          </div>
+          <div class="uni-head-chips">${dateChip("Apply by", app.application_deadline)}</div>
+          ${linksHTML(app.links)}
+          ${warnings.length ? `
+            <div class="uni-warn">${warnings.map((w) => `<div>${App.icon("alertTri")} ${esc(w)}</div>`).join("")}</div>` : ""}
+        </div>
+        <div class="uni-app-courses">
+          ${courses.map((c, i) => `
+            <div class="uni-app-course">
+              <div class="row between" style="align-items:flex-start;gap:8px">
+                <div style="min-width:0">
+                  ${app.ranked ? `<div class="uac-rank">${ordinal(i + 1)} choice</div>` : ""}
+                  ${sameUni(c) ? "" : `<div class="uac-uni">${esc(c.university_name)}</div>`}
+                  <div class="uac-name">${esc(c.course_name)}</div>
+                </div>
+                <div class="row" style="gap:4px;flex-shrink:0">
+                  ${app.ranked ? `
+                    <button class="icon-btn" data-choice="-1" data-cid="${esc(c.id)}" title="Move up" aria-label="Move ${esc(c.course_name)} up" ${i === 0 ? "disabled" : ""}>${App.icon("chevU")}</button>
+                    <button class="icon-btn" data-choice="1" data-cid="${esc(c.id)}" title="Move down" aria-label="Move ${esc(c.course_name)} down" ${i === courses.length - 1 ? "disabled" : ""}>${App.icon("chevD")}</button>` : ""}
+                  <button class="icon-btn" data-cact="edit" data-cid="${esc(c.id)}" title="Edit course">${App.icon("pencil")}</button>
+                  <button class="icon-btn danger" data-cact="delete" data-cid="${esc(c.id)}" title="Delete course">${App.icon("trash")}</button>
+                </div>
+              </div>
+              ${(c.decision || c.own_deadline || c.entrance_exam_date || c.interview_date) ? `
+                <div class="uni-head-chips">
+                  ${outcomeChips(c)}
+                  ${c.own_deadline ? dateChip("Own deadline", c.own_deadline) : ""}
+                  ${dateChip("Exam", c.entrance_exam_date)}
+                  ${dateChip("Interview", c.interview_date)}
+                </div>` : ""}
+              ${factsHTML(c)}
+              ${requirementBarsHTML(c)}
+              ${linksHTML(c.links)}
+              ${c.notes ? `<p class="small muted mt-2" style="white-space:pre-wrap">${esc(c.notes)}</p>` : ""}
+              ${/* Collapsed to a button until it has something in it: five
+                    empty boxes on a UCAS card is a lot of nothing. */""}
+              <div class="uac-steps" data-course-steps="${esc(c.id)}">
+                ${(c.course_steps || []).length ? "" : `<button class="btn btn-ghost btn-sm uac-steps-open" data-cstep-open>${App.icon("plus")} Step for this course</button>`}
+                <div data-cstep-body ${(c.course_steps || []).length ? "" : "hidden"}>
+                  <div class="section-label" style="margin:10px 0 4px">For this course</div>
+                  ${checklistHTML(c.course_steps || [], "cstep", "Add a step for this course…", "")}
+                </div>
+              </div>
+            </div>`).join("")}
+          <div class="uni-app-add">
+            <button class="btn btn-ghost btn-sm" data-add-course-to="${esc(app.id)}">${App.icon("plus")} Add course to this application</button>
+          </div>
+        </div>
+        ${trackerBodyHTML(app, tasks, labelFor, true)}
       </div>`;
   }
 
@@ -415,28 +627,42 @@
     title: "University",
     render() {
       const s = App.state();
-      const courses = [...s.courses].sort((a, b) => (a.application_deadline || "9999").localeCompare(b.application_deadline || "9999"));
+      const entries = App.universityEntries();
       const uniTasks = s.tasks.filter((t) => t.category === "university_application" && !App.isArchived(t));
-      const unlinked = uniTasks.filter((t) => !t.university_course_id || !courses.some((c) => c.id === t.university_course_id));
+      const owners = new Set([...s.courses.map((c) => c.id), ...s.applications.map((a) => a.id)]);
+      const unlinked = uniTasks.filter((t) => !t.university_course_id || !owners.has(t.university_course_id));
+      const empty = !s.courses.length && !s.applications.length;
 
+      /* An application's deadline is listed once, under its name; a course's
+         own deadline, exam and interview are listed under the course. */
       const deadlines = [];
-      courses.forEach((c) => {
-        if (c.application_deadline) deadlines.push({ c, type: "Application deadline", date: c.application_deadline, icon: "calendar" });
-        if (c.entrance_exam_date) deadlines.push({ c, type: "Entrance exam", date: c.entrance_exam_date, icon: "fileText" });
-        if (c.interview_date) deadlines.push({ c, type: "Interview", date: c.interview_date, icon: "clock" });
-      });
+      const courseName = (c) => `${c.university_name} — ${c.course_name}`;
+      for (const { app, courses } of entries) {
+        if (app && app.application_deadline) {
+          deadlines.push({ title: app.name, type: `Application deadline · ${courses.length} course${courses.length === 1 ? "" : "s"}`, date: app.application_deadline, icon: "calendar" });
+        }
+        for (const c of courses) {
+          const own = app ? c.own_deadline : c.application_deadline;
+          if (own) deadlines.push({ title: courseName(c), type: app ? `Own deadline · ${app.name}` : "Application deadline", date: own, icon: "calendar" });
+          if (c.entrance_exam_date) deadlines.push({ title: courseName(c), type: "Entrance exam", date: c.entrance_exam_date, icon: "fileText" });
+          if (c.interview_date) deadlines.push({ title: courseName(c), type: "Interview", date: c.interview_date, icon: "clock" });
+        }
+      }
       deadlines.sort((a, b) => a.date.localeCompare(b.date));
 
       return `
         <div class="page">
           ${UI.pageHead("University", "Applications, deadlines and admissions tasks",
-            `<button class="btn btn-primary" data-add-course>${App.icon("plus")} Add Course</button>`)}
+            `<div class="row wrap" style="gap:8px">
+               <button class="btn btn-outline" data-add-app title="UCAS, Common App, or one university's application covering several courses">${App.icon("plus")} Add Application</button>
+               <button class="btn btn-primary" data-add-course>${App.icon("plus")} Add Course</button>
+             </div>`)}
 
           ${portalsHTML()}
 
           ${gaugeHTML()}
 
-          ${!courses.length ? UI.emptyState("building", "No university courses yet", "Track applications, offer conditions, deadlines and materials",
+          ${empty ? UI.emptyState("building", "No university courses yet", "Track applications, offer conditions, deadlines and materials",
             `<button class="btn btn-outline btn-sm" data-add-course-2>${App.icon("plus")} Add your first course</button>`) : `
 
             ${deadlines.length ? `
@@ -446,7 +672,7 @@
                   <div class="deadline-row ${isPast(d.date) ? "overdue" : ""}">
                     ${App.icon(d.icon)}
                     <div class="dl-main">
-                      <div class="dl-title">${esc(d.c.university_name)} — ${esc(d.c.course_name)}</div>
+                      <div class="dl-title">${esc(d.title)}</div>
                       <div class="dl-type">${d.type}</div>
                     </div>
                     <div>
@@ -457,7 +683,7 @@
               </div>` : ""}
 
             <div class="stack">
-              ${courses.map((c) => courseCardHTML(c, uniTasks)).join("")}
+              ${entries.map((e) => e.app ? applicationCardHTML(e.app, e.courses, uniTasks) : courseCardHTML(e.courses[0], uniTasks)).join("")}
             </div>
 
             ${unlinked.length ? `
@@ -496,6 +722,7 @@
         }));
 
       el.querySelector("[data-add-course]").addEventListener("click", () => openCourseModal(null));
+      el.querySelector("[data-add-app]").addEventListener("click", () => openApplicationModal(null));
       const add2 = el.querySelector("[data-add-course-2]");
       if (add2) add2.addEventListener("click", () => openCourseModal(null));
       const addUnlinked = el.querySelector("[data-add-unlinked]");
@@ -518,75 +745,81 @@
         });
       });
 
-      // per-course interactions
-      el.querySelectorAll("[data-course]").forEach((cardEl) => {
-        const courseId = cardEl.dataset.course;
-        const course = () => App.state().courses.find((c) => c.id === courseId);
-
-        cardEl.querySelector('[data-cact="edit"]').addEventListener("click", () => openCourseModal(course()));
-        cardEl.querySelector('[data-cact="delete"]').addEventListener("click", async () => {
-          const c = course();
+      // Edit / delete / choice order — per course, on a card of its own or a
+      // row inside an application.
+      const byId = (id) => App.state().courses.find((c) => c.id === id);
+      el.querySelectorAll('[data-cact="edit"]').forEach((b) =>
+        b.addEventListener("click", () => openCourseModal(byId(b.dataset.cid))));
+      el.querySelectorAll('[data-cact="delete"]').forEach((b) =>
+        b.addEventListener("click", async () => {
+          const c = byId(b.dataset.cid);
+          if (!c) return;
           const ok = await UI.confirm({
             title: "Delete course?",
-            message: `${c.university_name} — ${c.course_name} will be removed. Linked tasks stay, but become unlinked.`,
+            message: `${c.university_name} — ${c.course_name} will be removed. Linked tasks stay, but become unlinked.`
+              + (c.application_id ? " The application and its shared tracker stay." : ""),
           });
-          if (ok) { App.deleteCourse(courseId); App.toast("Course deleted"); }
-        });
+          if (ok) { App.deleteCourse(c.id); App.toast("Course deleted"); }
+        }));
+      el.querySelectorAll("[data-choice]").forEach((b) =>
+        b.addEventListener("click", () => App.moveCourseChoice(b.dataset.cid, Number(b.dataset.choice))));
 
-        cardEl.querySelectorAll("[data-step]").forEach((b) =>
-          b.addEventListener("click", () => {
-            const c = course();
-            const steps = [...(c.key_steps || [])];
-            const i = Number(b.dataset.step);
-            steps[i] = { ...steps[i], completed: !steps[i].completed };
-            App.updateCourse(courseId, { key_steps: steps });
-          }));
+      el.querySelectorAll("[data-app-edit]").forEach((b) =>
+        b.addEventListener("click", () => openApplicationModal(App.applicationById(b.dataset.appEdit))));
+      el.querySelectorAll("[data-add-course-to]").forEach((b) =>
+        b.addEventListener("click", () => openCourseModal(null, b.dataset.addCourseTo)));
 
-        // Steps are add/removable, exactly as materials below are. Every course
-        // needs a different set: a UK application has no portfolio deadline and
-        // a US one has no interview to prepare for.
-        cardEl.querySelectorAll("[data-step-del]").forEach((b) =>
+      /* One wiring for every checklist on the page: tick, remove, add.
+         `get` reads the list fresh; `set` writes it back. */
+      const wireChecklist = (scope, kind, get, set) => {
+        scope.querySelectorAll(`[data-${kind}]`).forEach((b) =>
           b.addEventListener("click", () => {
-            const c = course();
-            App.updateCourse(courseId, { key_steps: (c.key_steps || []).filter((_, i) => i !== Number(b.dataset.stepDel)) });
+            const list = [...get()];
+            const i = Number(b.getAttribute(`data-${kind}`));
+            if (!list[i]) return;
+            list[i] = { ...list[i], completed: !list[i].completed };
+            set(list);
           }));
-        const stepInput = cardEl.querySelector("[data-step-new]");
-        const stepAdd = () => {
-          const v = stepInput.value.trim();
+        scope.querySelectorAll(`[data-${kind}-del]`).forEach((b) =>
+          b.addEventListener("click", () => {
+            const i = Number(b.getAttribute(`data-${kind}-del`));
+            set(get().filter((_, k) => k !== i));
+          }));
+        const input = scope.querySelector(`[data-${kind}-new]`);
+        const add = () => {
+          const v = input.value.trim();
           if (!v) return;
-          const c = course();
-          App.updateCourse(courseId, { key_steps: [...(c.key_steps || []), { item: v, completed: false }] });
+          set([...get(), { item: v, completed: false }]);
         };
-        const stepAddBtn = cardEl.querySelector("[data-step-add]");
-        if (stepAddBtn) stepAddBtn.addEventListener("click", stepAdd);
-        if (stepInput) stepInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); stepAdd(); }
+        const addBtn = scope.querySelector(`[data-${kind}-add]`);
+        if (addBtn) addBtn.addEventListener("click", add);
+        if (input) input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+      };
+
+      // Each card's tracker and materials belong to its owner: the course on
+      // its own, or the application.
+      el.querySelectorAll("[data-owner]").forEach((cardEl) => {
+        const id = cardEl.dataset.ownerId;
+        const isApp = cardEl.dataset.owner === "app";
+        const owner = () => (isApp ? App.applicationById(id) : byId(id)) || {};
+        const write = (patch) => (isApp ? App.updateApplication(id, patch) : App.updateCourse(id, patch));
+        // Only the card's own lists — not the per-course lists nested inside it.
+        const body = cardEl.querySelector(":scope > .card-pad.stack");
+        wireChecklist(body, "step", () => owner().key_steps || [], (v) => write({ key_steps: v }));
+        wireChecklist(body, "mat", () => owner().materials || [], (v) => write({ materials: v }));
+        body.querySelector("[data-add-task-for]").addEventListener("click", () => openUniTaskModal(id));
+      });
+
+      // The "For this course" list on each course inside an application.
+      el.querySelectorAll("[data-course-steps]").forEach((wrap) => {
+        const cid = wrap.dataset.courseSteps;
+        wireChecklist(wrap, "cstep", () => (byId(cid) || {}).course_steps || [], (v) => App.updateCourse(cid, { course_steps: v }));
+        const open = wrap.querySelector("[data-cstep-open]");
+        if (open) open.addEventListener("click", () => {
+          open.remove();
+          wrap.querySelector("[data-cstep-body]").hidden = false;
+          wrap.querySelector("[data-cstep-new]").focus();
         });
-
-        cardEl.querySelectorAll("[data-mat]").forEach((b) =>
-          b.addEventListener("click", () => {
-            const c = course();
-            const mats = [...(c.materials || [])];
-            const i = Number(b.dataset.mat);
-            mats[i] = { ...mats[i], completed: !mats[i].completed };
-            App.updateCourse(courseId, { materials: mats });
-          }));
-        cardEl.querySelectorAll("[data-mat-del]").forEach((b) =>
-          b.addEventListener("click", () => {
-            const c = course();
-            App.updateCourse(courseId, { materials: (c.materials || []).filter((_, i) => i !== Number(b.dataset.matDel)) });
-          }));
-        const matInput = cardEl.querySelector("[data-mat-new]");
-        const matAdd = () => {
-          const v = matInput.value.trim();
-          if (!v) return;
-          const c = course();
-          App.updateCourse(courseId, { materials: [...(c.materials || []), { item: v, completed: false }] });
-        };
-        cardEl.querySelector("[data-mat-add]").addEventListener("click", matAdd);
-        matInput.addEventListener("keydown", (e) => { if (e.key === "Enter") matAdd(); });
-
-        cardEl.querySelector("[data-add-task-for]").addEventListener("click", () => openUniTaskModal(courseId));
       });
     },
   };

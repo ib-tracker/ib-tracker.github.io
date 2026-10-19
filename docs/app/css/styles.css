@@ -903,6 +903,20 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .uni-head-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
 .uni-facts { display: flex; flex-wrap: wrap; gap: 5px 16px; margin-top: 9px; font-size: 12px; color: var(--ink-2); }
 .uni-facts strong { color: var(--ink); font-weight: 650; }
+/* One application, several courses: each course is a row between the
+   application's header and its shared tracker. */
+.uni-app-courses { border-bottom: 1px solid var(--hairline); }
+.uni-app-course { padding: 12px 18px; border-left: 3px solid var(--accent); }
+.uni-app-course + .uni-app-course { border-top: 1px solid var(--hairline); }
+.uni-app-course .uac-rank { font-size: 11px; font-weight: 650; color: var(--accent-soft-ink); text-transform: uppercase; letter-spacing: .04em; }
+.uni-app-course .uac-uni { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.uni-app-course .uac-steps .subtask-add { margin-top: 4px; }
+.uni-app-course .uac-steps-open { margin-top: 8px; padding-left: 0; }
+.uni-app-add { padding: 8px 12px; }
+.uni-warn { margin-top: 10px; padding: 8px 11px; border-radius: 9px; background: var(--warning-soft, rgba(237,161,0,.12)); color: var(--warning-ink, var(--ink)); font-size: 12.5px; display: grid; gap: 4px; }
+.uni-warn svg { width: 13px; height: 13px; vertical-align: -2px; }
+.uni-app-course .uac-name { font-size: 14px; font-weight: 600; margin-top: 1px; }
+.uni-app-course .icon-btn[disabled] { opacity: .35; pointer-events: none; }
 .req-bars { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
 .req-bar-row { display: grid; grid-template-columns: 116px minmax(0, 1fr) 84px; align-items: center; gap: 10px; font-size: 12.5px; }
 .req-bar-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

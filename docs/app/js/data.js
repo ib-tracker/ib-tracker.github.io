@@ -27,11 +27,22 @@
     bi_weekly: "Bi-weekly", monthly: "Monthly",
   };
 
+  /* Stage (the application), decision (the university's), reply (yours).
+     See App.normalizeCourses in core.js. accepted / rejected are the old
+     single-status values, kept so an old backup still reads; they are
+     converted on load. */
   App.UNI_STATUSES = {
     not_started: { label: "Not Started", chip: "chip-plain" },
     in_progress: { label: "In Progress", chip: "chip-accent" },
     submitted: { label: "Submitted", chip: "chip-warning" },
     offer_received: { label: "Offer Received", chip: "chip-good" },
+    conditional_offer: { label: "Conditional Offer", chip: "chip-good" },
+    unconditional_offer: { label: "Unconditional Offer", chip: "chip-good" },
+    unsuccessful: { label: "Unsuccessful", chip: "chip-danger" },
+    withdrawn: { label: "Withdrawn", chip: "chip-plain" },
+    firm: { label: "Firm Choice", chip: "chip-good" },
+    insurance: { label: "Insurance Choice", chip: "chip-accent" },
+    declined: { label: "Declined", chip: "chip-plain" },
     accepted: { label: "Accepted", chip: "chip-good" },
     rejected: { label: "Rejected", chip: "chip-danger" },
   };
@@ -1115,28 +1126,219 @@
     App.update((s) => { s.savedFilters = s.savedFilters.filter((x) => x.id !== id); });
   };
 
-  /* ---------- university ---------- */
+  /* ---------- university ----------
+     Courses and applications. The rules that tie them together — derived
+     status and deadline, choice order, one firm and one insurance — live in
+     App.normalizeCourses (core.js), which every write here ends with. */
+  const cloneJSON = (v) => JSON.parse(JSON.stringify(v));
+  const normalize = (s) => App.normalizeCourses(s);
+
+  // Returns the course's id, so a new course can be put on an application.
   App.saveCourse = function (id, data) {
+    let savedId = id;
     App.update((s) => {
+      let c;
       if (id) {
-        const c = s.courses.find((x) => x.id === id);
+        c = s.courses.find((x) => x.id === id);
         if (c) Object.assign(c, data, { updated_at: now() });
       } else {
-        s.courses.push(Object.assign({ id: App.uid(), status: "not_started", key_steps: [], materials: [], created_at: now(), updated_at: now() }, data));
+        c = Object.assign({ id: App.uid(), stage: "not_started", decision: "", reply: "", key_steps: [], materials: [], created_at: now(), updated_at: now() }, data);
+        savedId = c.id;
+        s.courses.push(c);
       }
+      if (c) claimReply(s, c);
+      normalize(s);
     });
+    return savedId;
   };
   App.deleteCourse = function (id) {
     App.update((s) => {
       s.courses = s.courses.filter((x) => x.id !== id);
       s.tasks.forEach((t) => { if (t.university_course_id === id) t.university_course_id = ""; });
+      normalize(s);
     });
   };
   App.updateCourse = function (id, patch) {
     App.update((s) => {
       const c = s.courses.find((x) => x.id === id);
-      if (c) Object.assign(c, patch, { updated_at: now() });
+      if (c) { Object.assign(c, patch, { updated_at: now() }); claimReply(s, c); }
+      normalize(s);
     });
+  };
+
+  // A firm or insurance reply just given takes the slot from whichever other
+  // course on the application held it — the newest answer is the real one.
+  function claimReply(s, c) {
+    if (!c.application_id || !(c.reply === "firm" || c.reply === "insurance")) return;
+    for (const x of s.courses) {
+      if (x !== c && x.application_id === c.application_id && x.reply === c.reply) x.reply = "";
+    }
+  }
+
+  /* ---------- applications ----------
+     One application can name several courses: several courses at one
+     university, or up to five across universities on UCAS, or any number on
+     Common App. The application owns the deadline, its status, the shared
+     tracker and materials, and its own links and notes. Each course keeps
+     its university, its exams and interviews, offer conditions, decision and
+     reply, plus a small checklist of its own. */
+  App.applicationById = (id) => App.state().applications.find((a) => a.id === id) || null;
+  App.applicationCourses = function (appId) {
+    return App.state().courses.filter((c) => c.application_id === appId)
+      .sort((a, b) => (a.choice_rank || 0) - (b.choice_rank || 0));
+  };
+
+  App.saveApplication = function (id, data) {
+    let savedId = id;
+    App.update((s) => {
+      if (id) {
+        const a = s.applications.find((x) => x.id === id);
+        if (a) Object.assign(a, data, { updated_at: now() });
+      } else {
+        const a = Object.assign({
+          id: App.uid(), name: "", application_deadline: "", stage: "not_started", ranked: false,
+          key_steps: App.defaultKeySteps().map((item) => ({ item, completed: false })),
+          materials: App.defaultMaterials().map((item) => ({ item, completed: false })),
+          links: [], notes: "", created_at: now(), updated_at: now(),
+        }, data);
+        savedId = a.id;
+        s.applications.push(a);
+      }
+      normalize(s);
+    });
+    return savedId;
+  };
+  App.updateApplication = function (id, patch) {
+    App.update((s) => {
+      const a = s.applications.find((x) => x.id === id);
+      if (a) Object.assign(a, patch, { updated_at: now() });
+      normalize(s);
+    });
+  };
+
+  // Deleting an application keeps its courses, standalone, each with its own
+  // copy of the application's checklists, deadline and status.
+  App.deleteApplication = function (id) {
+    App.update((s) => {
+      const a = s.applications.find((x) => x.id === id);
+      if (!a) return;
+      for (const c of s.courses) if (c.application_id === id) detach(c, a);
+      s.applications = s.applications.filter((x) => x.id !== id);
+      s.tasks.forEach((t) => { if (t.university_course_id === id) t.university_course_id = ""; });
+      normalize(s);
+    });
+  };
+
+  function mergeChecklist(into, from) {
+    const out = cloneJSON(into || []);
+    for (const item of from || []) {
+      const key = String(item.item || "").trim().toLowerCase();
+      if (!key) continue;
+      const hit = out.find((x) => String(x.item || "").trim().toLowerCase() === key);
+      if (hit) hit.completed = hit.completed || !!item.completed;
+      else out.push(cloneJSON(item));
+    }
+    return out;
+  }
+
+  // A course leaving its application: it takes a copy of what it relied on.
+  function detach(c, a) {
+    c.stage = a.stage;
+    c.application_deadline = c.own_deadline || a.application_deadline || "";
+    c.key_steps = mergeChecklist(a.key_steps, c.course_steps);
+    c.materials = cloneJSON(a.materials || []);
+    delete c.application_id; delete c.choice_rank; delete c.own_deadline; delete c.course_steps;
+  }
+
+  /* Put a course on an application ("" = make it standalone). Joining merges
+     its checklists into the application's (duplicates dropped, ticked if
+     ticked in either), keeps a deadline that differs from the application's
+     as the course's own, and can only move the application's status forward. */
+  App.setCourseApplication = function (courseId, appId) {
+    App.update((s) => {
+      const c = s.courses.find((x) => x.id === courseId);
+      if (!c || (c.application_id || "") === (appId || "")) return;
+      const old = c.application_id && s.applications.find((x) => x.id === c.application_id);
+      const a = appId && s.applications.find((x) => x.id === appId);
+      if (old && a) {
+        // Application to application: only what is the course's own travels
+        // (its checklist, its own deadline). The old application's shared
+        // tracker belongs to that application.
+        c.application_id = a.id;
+        c.choice_rank = s.courses.filter((x) => x.application_id === a.id).length + 1;
+        claimReply(s, c);
+        c.updated_at = now();
+        normalize(s);
+        return;
+      }
+      if (old) detach(c, old);
+      else if (c.application_id) { delete c.application_id; delete c.choice_rank; delete c.own_deadline; delete c.course_steps; }
+      if (a) {
+        a.key_steps = mergeChecklist(a.key_steps, c.key_steps);
+        a.materials = mergeChecklist(a.materials, c.materials);
+        const mine = c.application_deadline || "";
+        if (!a.application_deadline && mine) a.application_deadline = mine;
+        c.own_deadline = mine && mine !== a.application_deadline ? mine : "";
+        const stage = App.UNI_STAGES.includes(c.stage) ? c.stage : "not_started";
+        if (App.UNI_STAGES.indexOf(stage) > App.UNI_STAGES.indexOf(a.stage)) a.stage = stage;
+        c.key_steps = []; c.materials = [];
+        if (!Array.isArray(c.course_steps)) c.course_steps = [];
+        c.application_id = a.id;
+        c.choice_rank = s.courses.filter((x) => x.application_id === a.id).length + 1;
+        a.updated_at = now();
+        claimReply(s, c);
+      }
+      c.updated_at = now();
+      normalize(s);
+    });
+  };
+
+  // Move a course up (-1) or down (+1) its application's choice order.
+  App.moveCourseChoice = function (courseId, dir) {
+    App.update((s) => {
+      const c = s.courses.find((x) => x.id === courseId);
+      if (!c || !c.application_id) return;
+      const group = s.courses.filter((x) => x.application_id === c.application_id)
+        .sort((a, b) => (a.choice_rank || 0) - (b.choice_rank || 0));
+      const i = group.indexOf(c), j = i + dir;
+      if (j < 0 || j >= group.length) return;
+      [group[i], group[j]] = [group[j], group[i]];
+      group.forEach((x, k) => { x.choice_rank = k + 1; });
+      normalize(s);
+    });
+  };
+
+  /* UCAS's own limits, as warnings: at most five choices, at most four in
+     medicine, dentistry or veterinary science, Oxford or Cambridge but not
+     both, and an insurance choice only behind a conditional firm. Applies
+     to an application whose name says UCAS. */
+  App.applicationWarnings = function (app, courses) {
+    if (!/\bucas\b/i.test(app.name || "")) return [];
+    const out = [];
+    if (courses.length > 5) out.push(`UCAS allows 5 choices; this has ${courses.length}.`);
+    const med = courses.filter((c) => /\b(medicine|dentistry|dental|veterinary)\b/i.test(c.course_name || "")).length;
+    if (med > 4) out.push(`UCAS allows at most 4 choices in medicine, dentistry or veterinary science; this has ${med}.`);
+    const ox = courses.some((c) => /\boxford\b/i.test(c.university_name) && !/brookes/i.test(c.university_name));
+    const cam = courses.some((c) => /\bcambridge\b/i.test(c.university_name) && !/anglia/i.test(c.university_name));
+    if (ox && cam) out.push("UCAS doesn't allow both Oxford and Cambridge in the same year.");
+    const firm = courses.find((c) => c.reply === "firm");
+    if (firm && firm.decision === "unconditional_offer" && courses.some((c) => c.reply === "insurance")) {
+      out.push("Your firm offer is unconditional, so UCAS won't hold an insurance choice as well.");
+    }
+    return out;
+  };
+
+  /* What the University page lists: each application with its courses, and
+     each standalone course on its own, earliest deadline first. */
+  App.universityEntries = function () {
+    const s = App.state();
+    const out = s.applications.map((a) => ({ app: a, courses: App.applicationCourses(a.id) }));
+    for (const c of s.courses) if (!c.application_id) out.push({ app: null, courses: [c] });
+    const key = (e) => {
+      const ds = [e.app ? e.app.application_deadline : "", ...e.courses.map((c) => c.application_deadline)].filter(Boolean).sort();
+      return ds[0] || "9999";
+    };
+    return out.sort((x, y) => key(x).localeCompare(key(y)));
   };
 
   /* ---------- notes ---------- */
@@ -1468,8 +1670,38 @@
         ? c.links.map((l) => ({ label: String(l.label || "").slice(0, 40), url: App.safeURL(l.url) }))
             .filter((l) => l.url).slice(0, 20)
         : [],
+      // Stage / decision / reply and the application link. Anything missing
+      // or invalid is filled in by App.normalizeCourses after import.
+      ...(App.UNI_STAGES.includes(c.stage) ? { stage: c.stage } : {}),
+      decision: App.UNI_DECISIONS.includes(c.decision) ? c.decision : "",
+      reply: App.UNI_REPLIES.includes(c.reply) ? c.reply : "",
+      ...(c.application_id ? {
+        application_id: String(c.application_id),
+        choice_rank: Number(c.choice_rank) || 1,
+        own_deadline: c.own_deadline ? String(c.own_deadline).slice(0, 10) : "",
+        course_steps: Array.isArray(c.course_steps) ? c.course_steps.map((k) => ({ item: String(k.item || ""), completed: !!k.completed })) : [],
+      } : {}),
       created_at: c.created_at || c.created_date || now(),
       updated_at: c.updated_at || c.updated_date || now(),
+    };
+  }
+
+  function legacyApplication(a) {
+    const list = (v) => Array.isArray(v) ? v.map((k) => ({ item: String(k.item || ""), completed: !!k.completed })) : [];
+    return {
+      id: a.id || App.uid(),
+      name: String(a.name || "").slice(0, 80),
+      application_deadline: a.application_deadline ? String(a.application_deadline).slice(0, 10) : "",
+      stage: App.UNI_STAGES.includes(a.stage) ? a.stage : "not_started",
+      ranked: !!a.ranked,
+      key_steps: list(a.key_steps),
+      materials: list(a.materials),
+      links: Array.isArray(a.links)
+        ? a.links.map((l) => ({ label: String(l.label || "").slice(0, 40), url: App.safeURL(l.url) })).filter((l) => l.url).slice(0, 20)
+        : [],
+      notes: a.notes || "",
+      created_at: a.created_at || now(),
+      updated_at: a.updated_at || now(),
     };
   }
 
@@ -1532,6 +1764,7 @@
     template: { key: "templates", map: legacyTemplate, aliases: ["tasktemplate", "tasktemplates", "task_template", "task_templates", "template", "templates"] },
     filter: { key: "savedFilters", map: legacyFilter, aliases: ["savedfilter", "savedfilters", "saved_filter", "saved_filters", "filter", "filters"] },
     course: { key: "courses", map: legacyCourse, aliases: ["universitycourse", "universitycourses", "university_course", "university_courses", "course", "courses"] },
+    application: { key: "applications", map: legacyApplication, aliases: ["application", "applications", "universityapplication", "universityapplications"] },
     settings: { key: "settings", map: legacySettings, aliases: ["usersettings", "user_settings", "settings"] },
   };
   App.ENTITY_MAP = ENTITY_MAP;
@@ -1640,7 +1873,7 @@
       if (notes) fresh.notes = notes;
       if (focus) fresh.focus = focus;
       if (portals) { fresh.portals = portals; fresh.ui.portals_seeded = true; }
-      App.replaceState(fresh);
+      App.replaceState(fresh);   // migrate() inside runs App.normalizeCourses
     } else {
       App.update((s) => {
         for (const ent of Object.values(ENTITY_MAP)) {
@@ -1674,6 +1907,8 @@
           portals.forEach((p) => { if (!seen.has(p.url)) s.portals.push(p); });
           s.ui.portals_seeded = true;
         }
+        // Merged courses may point at applications, or carry old statuses.
+        App.normalizeCourses(s);
         s.ui.welcomed = true;
       });
     }

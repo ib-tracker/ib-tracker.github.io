@@ -257,11 +257,94 @@
     { label: "BridgeU", url: "https://app.bridge-u.com/" },
   ];
 
+  /* ---------- university applications: the one normaliser ----------
+     Defined here because migrate() runs while core.js loads, and the same
+     rules have to hold on load, on restore and after every edit — so data.js
+     calls this at the end of every course or application write.
+
+     A course on its own carries its own `stage` (Not started / In progress /
+     Submitted). A course on an application (`application_id`) takes the
+     stage and deadline from the application, and may override the deadline
+     with `own_deadline`. Every course carries the university's `decision`
+     and the student's `reply` — kept apart because "conditional offer,
+     firm" needs both.
+
+     `status` and `application_deadline` on a course are DERIVED and rewritten
+     here, so the coach, reports, search and the task form — which read them
+     straight off the course — keep working with no idea applications exist.
+
+     Idempotent: safe to run any number of times. */
+  App.UNI_STAGES = ["not_started", "in_progress", "submitted"];
+  App.UNI_DECISIONS = ["offer_received", "conditional_offer", "unconditional_offer", "unsuccessful", "withdrawn"];
+  App.UNI_REPLIES = ["firm", "insurance", "declined"];
+  App.isUniOffer = (d) => d === "offer_received" || d === "conditional_offer" || d === "unconditional_offer";
+
+  App.normalizeCourses = function (s) {
+    if (!Array.isArray(s.applications)) s.applications = [];
+    if (!Array.isArray(s.courses)) s.courses = [];
+    const apps = new Map(s.applications.filter((a) => a && a.id).map((a) => [a.id, a]));
+    for (const a of apps.values()) {
+      if (!App.UNI_STAGES.includes(a.stage)) a.stage = "not_started";
+      for (const k of ["key_steps", "materials", "links"]) if (!Array.isArray(a[k])) a[k] = [];
+      a.ranked = !!a.ranked;
+    }
+    for (const c of s.courses) {
+      if (!c) continue;
+      // Old single status → stage / decision / reply. Nothing is guessed:
+      // "Offer received" stays a generic offer until refined.
+      if (!c.application_id && !App.UNI_STAGES.includes(c.stage)) {
+        const st = c.status;
+        if (App.UNI_STAGES.includes(st)) c.stage = st;
+        else {
+          c.stage = st ? "submitted" : "not_started";
+          if (st === "accepted") { c.decision = c.decision || "offer_received"; c.reply = c.reply || "firm"; }
+          else if (st === "rejected") c.decision = c.decision || "unsuccessful";
+          else if (App.UNI_DECISIONS.includes(st)) c.decision = c.decision || st;
+          else if (App.UNI_REPLIES.includes(st)) { c.decision = c.decision || "offer_received"; c.reply = c.reply || st; }
+        }
+      }
+      if (!App.UNI_DECISIONS.includes(c.decision)) c.decision = "";
+      if (!App.UNI_REPLIES.includes(c.reply) || !App.isUniOffer(c.decision)) c.reply = "";
+      // An application that no longer exists (deleted, or not in a restored
+      // backup) — the course carries on standalone.
+      if (c.application_id && !apps.has(c.application_id)) {
+        delete c.application_id; delete c.choice_rank; delete c.own_deadline;
+        if (!App.UNI_STAGES.includes(c.stage)) c.stage = "not_started";
+      }
+      if (c.application_id) {
+        delete c.stage;
+        if (!Array.isArray(c.course_steps)) c.course_steps = [];
+        if (typeof c.own_deadline !== "string") c.own_deadline = "";
+      }
+    }
+    // Per application: tidy choice order, one firm and one insurance at most
+    // (the earliest-ranked keeps it), and rewrite the derived fields.
+    for (const a of apps.values()) {
+      const group = s.courses.filter((c) => c && c.application_id === a.id)
+        .sort((x, y) => (Number(x.choice_rank) || 0) - (Number(y.choice_rank) || 0));
+      const held = new Set();
+      group.forEach((c, i) => {
+        c.choice_rank = i + 1;
+        if (c.reply === "firm" || c.reply === "insurance") {
+          if (held.has(c.reply)) c.reply = ""; else held.add(c.reply);
+        }
+        // An "own" deadline that matches the application's isn't an override.
+        if (c.own_deadline && c.own_deadline === a.application_deadline) c.own_deadline = "";
+        c.application_deadline = c.own_deadline || a.application_deadline || "";
+        c.status = c.reply || c.decision || a.stage;
+      });
+    }
+    for (const c of s.courses) {
+      if (c && !c.application_id) c.status = c.reply || c.decision || c.stage || "not_started";
+    }
+    return s;
+  };
+
   App.emptyData = function () {
     return {
       version: 1,
       tasks: [], subtasks: [], subjects: [], grades: [], sessions: [],
-      busyBlocks: [], templates: [], savedFilters: [], courses: [],
+      busyBlocks: [], templates: [], savedFilters: [], courses: [], applications: [],
       /* Days when your repeating commitments simply don't happen — half-term,
          a bank holiday, a strike. The opposite of a busy block: it REMOVES
          time rather than claiming it, which is why it can't be one.
@@ -318,9 +401,10 @@
     if (typeof out.scratchpad !== "string") out.scratchpad = "";
     out.focus = Object.assign(App.defaultFocus(), data.focus || {});
     if (!Array.isArray(out.focus.allowlist)) out.focus.allowlist = [];
-    for (const k of ["tasks","subtasks","subjects","grades","sessions","busyBlocks","daysOff","templates","savedFilters","courses","gradeSnapshots","notes","portals"]) {
+    for (const k of ["tasks","subtasks","subjects","grades","sessions","busyBlocks","daysOff","templates","savedFilters","courses","applications","gradeSnapshots","notes","portals"]) {
       if (!Array.isArray(out[k])) out[k] = [];
     }
+    App.normalizeCourses(out);
     // Seed the two common portals once. Guarded by a flag, not by emptiness, so
     // deleting them all doesn't resurrect them on the next load.
     if (!out.ui.portals_seeded) {

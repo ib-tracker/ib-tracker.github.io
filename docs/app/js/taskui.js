@@ -301,6 +301,7 @@
     const allTasks = App.sortedTasks().filter((t) => (!task || t.id !== task.id) && !App.isArchived(t));
     const templates = App.state().templates;
     const courses = App.state().courses;
+    const apps = App.state().applications || [];
     const isUni = f.category === "university_application";
 
     const defaultTplId = (defaults || {}).__templateId || "";
@@ -341,9 +342,13 @@
         </div>
         <div class="field" data-course-field ${isUni ? "" : "hidden"}>
           <label>University course</label>
-          ${courses.length
+          ${/* A task can belong to a whole application (the personal statement
+                is UCAS's, not one course's) or to one course on it. */""}
+          ${courses.length || apps.length
             ? UI.selectHTML("university_course_id",
-                [["", "Not tied to a course"], ...courses.map((c) => [c.id, `${c.university_name} — ${c.course_name}`])],
+                [["", "Not tied to a course"],
+                 ...apps.map((a) => [a.id, `${a.name} (whole application)`]),
+                 ...courses.map((c) => [c.id, `${c.university_name} — ${c.course_name}`])],
                 f.university_course_id)
             : `<p class="hint" style="margin:0">No university courses yet. Add one on the University page and it'll show up here.</p>`}
         </div>
